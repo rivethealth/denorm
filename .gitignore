@@ -1,7 +1,9 @@
 *.egg-info/
+*.log
+*.pyc
 
+.vscode/
 __pycache__/
 build/
+node_modules/
 target/
-
-*.pyc

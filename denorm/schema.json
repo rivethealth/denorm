@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "type": "object",
+  "definitions": {
+    "source": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "tables": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/source_table" }
+        },
+        "expression": { "type": "string" },
+        "join": { "type": "string" },
+        "dep": { "type": "string" }
+      },
+      "required": ["id", "expression", "tables"]
+    },
+    "source_table": {
+      "type": "object",
+      "properties": {
+        "columns": { "type": "array", "items": { "type": "string" } },
+        "schema": { "type": "string" },
+        "table": { "type": "string" }
+      },
+      "required": ["columns", "table"]
+    },
+    "target_table": {
+      "type": "object",
+      "properties": {
+        "schema": { "type": "string" },
+        "table": { "type": "string" }
+      },
+      "required": ["table"]
+    }
+  },
+  "properties": {
+    "columns": { "type": "array", "items": { "type": "string" } },
+    "id": { "type": "string" },
+    "query": { "type": "string" },
+    "schema": { "type": "string" },
+    "sources": { "type": "array", "items": { "$ref": "#/definitions/source" } },
+    "target": { "$ref": "#/definitions/target_table" }
+  },
+  "required": ["columns", "id", "query", "sources", "target"]
+}

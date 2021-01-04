@@ -1,0 +1,124 @@
+keys:
+  - name: id
+    type: int
+roots: ["book"]
+tables:
+  book:
+    name: book
+  book_author:
+    name: book_author
+    join:
+      expression: $1.book_id = $2.id
+      tables: ["book"]
+  author:
+    name: author
+    join:
+      expression: $1.id = $2.author_id
+      tables: ["book_author"]
+  genre:
+    name: genre
+    join:
+      expression: $1.id = $2.genre_id
+      tables: ["book"]
+  language:
+    name: language
+    join:
+      expression: $1.id = $2.language_id
+      tables: ["book"]
+  publication:
+    name: publication
+    join:
+      expression: $1.book_id = $2.id
+      tables: ["book"]
+  publisher:
+    name: publisher
+    join:
+      expression: $1.id = $2.publisher_id
+      tables: ["publication"]
+  series:
+    name: series
+    join:
+      expression: $1.id = $2.series_id
+      tables: ["book"]
+query: >
+  SELECT
+    b.id,
+    b.isbn,
+    a.names AS author_names,
+    g.name AS genre_name,
+    p.name AS publisher_name,
+    p3.years AS publish_years
+  FROM __keys__ AS k (id)
+    JOIN book AS b ON k.id = b.id
+    JOIN book_author AS ba ON p.id = ba.book_id
+    JOIN author AS a ON ba.author_id = a.id
+    JOIN genre AS g ON b.genre_id = b.id
+    LEFT JOIN series AS s ON b.series_id = s.id
+    CROSS JOIN LATERAL (
+      SELECT coalesce(array_agg(a.name ORDER BY ba.ordinal), '{}') AS author_names,
+      FROM author AS a
+        JOIN book_author AS ba ON a.id = ba.author_id
+      WHERE a.id = b
+    ) AS a
+    CROSS JOIN LATERAL (
+      SELECT
+        coalesce(array_agg(p.year ORDER BY p.year), '{}') AS years,
+        last_value(p2.name) OVER (ORDER BY p.year)
+      FROM publication AS p
+        JOIN publisher AS p2 ON p.publisher_id = p2.id
+      WHERE b.id = p.book_id
+    ) AS p
+
+# CREATE TABLE _chg__book_full__author (
+#   xact_id int NOT NULL,
+#   id int
+# )
+
+# SELECT
+#    p.id,
+#    b.isbn,
+#    p.name,
+#    a.names AS author_names,
+#    r.name AS genre_name,
+#    p3.years AS publish_years,
+#    p2.name AS publisher_name
+# FROM book AS b
+#   JOIN book_author AS ba ON p.id = ba.book_id
+#   JOIN author AS a ON ba.author_id = a.id
+#   JOIN genre AS g ON b.genre_id = b.id
+#   LEFT JOIN series AS s ON b.series_id = s.id
+#   CROSS JOIN LATERAL (
+#     SELECT coalesce(array_agg(a.name ORDER BY ba.ordinal), '{}') AS author_names,
+#     FROM author AS a
+#       JOIN book_author AS ba ON a.id = ba.author_id
+#     WHERE a.id = b
+#   ) AS a
+#   CROSS JOIN LATERAL (
+#     SELECT
+#        coalesce(array_agg(p.year ORDER BY p.year), '{}') AS years,
+#        last_value(p2.name) OVER (ORDER BY p.year)
+#     FROM publication AS p
+#       JOIN publisher AS p2 ON p.publisher_id = p2.id
+#     WHERE b.id = p.book_id
+#   ) AS p
+# WHERE b.id = ANY(_key)
+
+# INSERT INTO book_full_lock (id)
+# SELECT *
+# FROM unnest(_key)
+# ON CONFLICT (id) DO UPDATE
+#   SET id = excluded.id
+#   WHERE false
+
+# DELETE FROM book AS t
+# WHERE t.id = ANY(_key)
+
+# INSERT INTO book
+# %q
+
+# INSERT INTO book_full_queue (id)
+# SELECT *
+# FROM unnest(_key)
+# ON CONFLICT (id) DO UPDATE
+#   SET id = excluded.id
+#   WHERE false
