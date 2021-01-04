@@ -1,4 +1,4 @@
-#!/bin/bash -ex
+#!/bin/bash -e
 set -o pipefail
 
 base="$(dirname "$0")"
@@ -22,6 +22,8 @@ denorm create_sql "$base/book_full.yml"
 denorm create_sql "$base/book_full.yml" | psql -1 -f - -v ON_ERROR_STOP=true
 
 psql -1 -f "$base/data.sql" -v ON_ERROR_STOP=true
+
+psql -a -f "$base/display.sql" -v ON_ERROR_STOP=true
 
 echo 'Access PostgreSQL at localhost:5432'
 

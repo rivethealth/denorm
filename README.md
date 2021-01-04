@@ -10,9 +10,9 @@ maintenance, materialized view
 - Supports complex SQL features and expressions
 - Configurable consistency
 
-## Example
+## Examples
 
-Consider a database of books.
+The following examples use a database of books.
 
 <details>
 <summary>DDL</summary>
@@ -40,9 +40,9 @@ CREATE TABLE book_author (
 
 </details>
 
-### Denormalization
+### Denormalization example
 
-_Execute [examples/init/run](examples/init/run) to run this example._
+_Execute [examples/init/run](examples/denormalize/run) to run this example._
 
 Suppose you need a table of books with title and author names.
 
@@ -60,31 +60,8 @@ CREATE TABLE book_full (
 </details>
 
 Author a query that collects the correct data for a recordset of primary keys
-`$1` (in this case, book IDs).
-
-<details>
-<summary>DDL</summary>
-
-```sql
-  SELECT
-    b.id,
-    b.title,
-    a.names
-  FROM
-    $1 AS k (id)
-    JOIN book AS b ON k.id = b.id
-    CROSS JOIN LATERAL (
-      SELECT coalesce(array_agg(a.name ORDER BY ba.ordinal), '{}') AS names
-      FROM
-        author AS a
-        JOIN book_author AS ba ON a.id = ba.author_id
-      WHERE b.id = ba.book_id
-    ) AS a
-```
-
-</details>
-
-Create a YAML file with the query and the relationships between tables
+`$1` (in this case, book IDs). Create a YAML file with the query and the
+relationships between tables.
 
 <details>
 <summary>book_full.yml</summary>
@@ -143,7 +120,7 @@ Then execute this SQL against the target database (could be the same one).
 psql -1 -f book_full.sql
 ```
 
-Now test
+Add data
 
 <details>
 <summary>Data</summary>
@@ -262,9 +239,24 @@ TABLE author_book_stat
 
 ```
 
-## Documentation
+## Denormalization
 
-### Denormalization relationships
+### Generated objects
+
+ID is used to name database objects.
+
+Database objects are created in the schema if given. Otherwise they will be
+created in the default schema.
+
+Note that PostgreSQL identifiers are limited to 63 characters. Long IDs and
+table names may run into this issue.
+
+### Target
+
+The target table must have a primary key. It may have columns not populated by
+the query.
+
+### Sources
 
 The purposes of `sources` is to calculate the primary keys of the target that
 needed to be refreshed (inserted, updated, deleted).
@@ -275,7 +267,8 @@ Each sources `sources` item has:
 - tables - List of tables and columns. Columns are any columns used in
   `expression`, `identity`, or `join`.
 - expression - From expression, using $1, $2, etc as the placeholders for
-  tables. Use a table alias to ensure a consistent name elsewhere.
+  tables. Alias the tables to provide a consistent name that can be referenced
+  elsewhere.
 
 If this source has the primary key,
 
@@ -287,15 +280,22 @@ Otherwise, if additional tables need to be referenced to find the primary key,
 - join - Expression for an inner join on the two sources.
 
 Usually, each source has a single table, though denorm supports other cases, for
-example a full carteaian product of two tables.
+example a carteaian product of two tables.
 
 ### Constistency
+
+_TODO: not yet implemented_
 
 There are two supported consistency modes.
 
 #### transaction
 
-This is the default. The target table is updated at the end of the transaction.
+This is the default. The target table is updated at the end of the transaction,
+via a constraint trigger.
+
+Deferring work until the end of a transaction is particularly useful for
+avoiding excess work for "nested" records (insert a record and its children and
+grandchildren).
 
 #### iterate
 
@@ -310,7 +310,7 @@ For example, an author may have many books. (This particular example is
 contrived, as in fact as an individual author will not have thousands of books,
 so it would be preferrable to use the simpler transaction consistency mode.)
 
-Change the consistency to `iterate`.
+Add an `iterator` with the values that comprise the iteration key.
 
 <details>
 <summary>book_full.yml</summary>
@@ -321,13 +321,22 @@ Change the consistency to `iterate`.
   expression: $1 AS author
   dep: book_author
   join: author.id = book_author.author_id
-  consistency: iterate
+  partition: author.id
+  iterator: book_author.id
 ```
 
 </details>
 
 Now, updates will not automatically affect the target table. Instead, changes
 are queued and must be processed seperately.
+
+The queue uses
+[advistory locks.](https://www.postgresql.org/docs/12/explicit-locking.html#ADVISORY-LOCKS)
+Choose a 52-bit space for locks with the `--advisory-lock <num>` where `<num>`
+is an integer from 0 to 65535. The lower end of the range is num\*2^60 By default,
+0 is used.
+
+#### Worker
 
 ```sql
 -- Find an incomplete author change and refresh the target for up to 1000 corresponding
@@ -337,9 +346,10 @@ CALL book_full__process__author(1000);
 ```
 
 <details>
-<summary>If you want more control over the processing, you can call functions individually,</summary>
+<summary>Functions may be called individually for additional control.</summary>
 
 ```sql
+-- Find and lock an incomplete author change.
 SELECT book_full__lock__author();
 ```
 
@@ -348,6 +358,7 @@ with that value.
 
 ```sql
 BEGIN
+-- Refresh the target for up to 1000 corresponding book_author records.
 -- Return whether additional processing remains to be done.
 SELECT book_full__update__author($1, 1000);
 COMMIT
@@ -356,10 +367,9 @@ COMMIT
 Release the lock.
 
 ```sql
-SELECT book_full__unlock__author()
+-- Unlock the author change.
+SELECT book_full__unlock__author($1)
 ```
-
-This technique uses advisory locks to avoid queue processing blocking queueing.
 
 </details>
 
@@ -371,7 +381,8 @@ the `public.book_full__change__author` listener.
 In order to work efficiently, the foreign table must have an index on its
 foreign and primary keys, in that order.
 
-To iteratively process `author`, the following index is required:
+To iteratively process `author`, the following index is required on
+`book_author`:
 
 ```sql
 CREATE INDEX ON book_author (author_id, id);
@@ -394,13 +405,10 @@ This option is only valid on single-table sources.
 
 Denormalization exchanges slower write performance for higher read performance.
 
-While it's impossible to escape this reality, Denorm has been created to be as
-fast as hand-tuned methods.
+While it's impossible to escape this reality, Denorm has been created to be on
+par as most hand-tuned methods.
 
-It uses statement triggers to reduce overhead. Deferred constraint triggers
-batch work in a single transaction. This is particularly useful for "nested"
-changes (insert a record and its children and grandchildren), where it avoids
-the heavy lifting on every change.
+Statement triggers reduce overhead for modifying many records.
 
 PostgreSQL does not support global temporary tables, so Denorm uses session temp
 tables with `ON COMMIT DROP`. The first update in a session has several ms of
