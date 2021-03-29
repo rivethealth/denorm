@@ -1,4 +1,4 @@
-# Example
+# Join example
 
 Requires Docker and PostgreSQL client binaries.
 
@@ -89,7 +89,7 @@ query: >
     ) AS a
 " \
   | yq \
-  | denorm create-denorm \
+  | denorm create-join \
   | PGHOST=localhost psql
 ```
 

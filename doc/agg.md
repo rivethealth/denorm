@@ -1,4 +1,4 @@
-# Aggregation
+# Agg
 
 ## Example
 

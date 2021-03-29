@@ -8,7 +8,7 @@ from ..json import DataJsonFormat, ValidatingDataJsonFormat, package_json_format
 from ..sql import SqlObject
 
 
-class DenormConsistency(enum.Enum):
+class JoinConsistency(enum.Enum):
     DEFERRED = "deferred"
     IMMEDIATE = "immediate"
 
@@ -18,11 +18,11 @@ class DenormConsistency(enum.Enum):
     undefined=dataclasses_json.Undefined.EXCLUDE,
 )
 @dataclasses.dataclass
-class DenormTarget:
+class JoinTarget:
+    columns: typing.List[str]
     key: typing.List[str]
     name: str
     schema: typing.Optional[str] = None
-    columns: typing.Optional[typing.List[str]] = None
 
     @property
     def sql(self) -> SqlObject:
@@ -38,7 +38,7 @@ class DenormTarget:
     undefined=dataclasses_json.Undefined.EXCLUDE,
 )
 @dataclasses.dataclass
-class DenormTable:
+class JoinTable:
     id: str
     name: str
     dep: typing.Optional[str] = None
@@ -66,14 +66,16 @@ class DenormTable:
     undefined=dataclasses_json.Undefined.EXCLUDE,
 )
 @dataclasses.dataclass(frozen=True)
-class DenormHook:
+class JoinHook:
     name: str
     schema: typing.Optional[str] = None
 
     @property
     def sql(self) -> SqlObject:
         return (
-            SqlObject(self.schema, name) if self.schema is not None else SqlObject(name)
+            SqlObject(self.schema, self.name)
+            if self.schema is not None
+            else SqlObject(self.name)
         )
 
 
@@ -82,8 +84,8 @@ class DenormHook:
     undefined=dataclasses_json.Undefined.EXCLUDE,
 )
 @dataclasses.dataclass(frozen=True)
-class DenormHooks:
-    before: typing.Optional[DenormHook] = None
+class JoinHooks:
+    before: typing.Optional[JoinHook] = None
 
 
 @dataclasses_json.dataclass_json(
@@ -91,13 +93,13 @@ class DenormHooks:
     undefined=dataclasses_json.Undefined.EXCLUDE,
 )
 @dataclasses.dataclass
-class Denorm:
+class Join:
     id: str
     query: str
-    tables: typing.List[DenormTable]
-    target: DenormTarget
-    consistency: DenormConsistency = DenormConsistency.IMMEDIATE
-    hooks: DenormHooks = DenormHooks(before=None)
+    tables: typing.List[JoinTable]
+    target: JoinTarget
+    consistency: JoinConsistency = JoinConsistency.IMMEDIATE
+    hooks: JoinHooks = JoinHooks(before=None)
     schema: typing.Optional[str] = None
 
     def sql_object(self, name):
@@ -106,22 +108,11 @@ class Denorm:
         )
 
 
-class DenormInvalid(Exception):
+class JoinInvalid(Exception):
     def __init__(self, message):
         super().__init__(message)
 
 
-def validate_denorm(denorm: Denorm):
-    if denorm.consistency == DenormConsistency.DEFERRED and denorm.query is None:
-        raise DenormInvalid("Deferrable mode is only used with query")
+JOIN_JSON_FORMAT = package_json_format("denorm.formats", "join.json")
 
-    if denorm.target.columns is None and denorm.query is not None:
-        raise DenormInvalid("Query requires target column list")
-
-
-DENORM_JSON_FORMAT = package_json_format("denorm.formats", "denorm.json")
-
-DENORM_DATA_JSON_FORMAT = ValidatingDataJsonFormat(
-    DataJsonFormat(DENORM_JSON_FORMAT, Denorm.schema()),
-    validate_denorm,
-)
+JOIN_DATA_JSON_FORMAT = DataJsonFormat(JOIN_JSON_FORMAT, Join.schema())

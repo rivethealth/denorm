@@ -18,7 +18,6 @@ Tables:
 * ID__iterate__SOURCE - Queue changes for iteration
   - When iteration is used
 * ID__lock - Value lock
-  - When query is used
 
 Temp tables:
 * ID__key - Keys to update
@@ -26,7 +25,7 @@ Temp tables:
 * ID__refresh - Fire constraint trigger at end of transaction
   - When consistency is deferred
   - Triggers:
-      * denorm (deferred) - Perform refresh
+      * join (deferred) - Perform refresh
 """
 
 
@@ -39,41 +38,40 @@ import jsonschema
 import yaml
 
 from .format import format
-from .formats.denorm import (
-    DENORM_DATA_JSON_FORMAT,
-    Denorm,
-    DenormConsistency,
-    DenormHooks,
-    DenormTable,
-    DenormTarget,
+from .formats.join import (
+    JOIN_DATA_JSON_FORMAT,
+    Join,
+    JoinConsistency,
+    JoinHooks,
+    JoinTable,
+    JoinTarget,
 )
 from .graph import recurse
 from .resource import ResourceFactory
-from .sql import SqlIdentifier, SqlLiteral, SqlObject, conflict_update
+from .sql import SqlIdentifier, SqlList, SqlLiteral, SqlObject, conflict_update
 from .string import indent
 
 
 @dataclasses.dataclass
-class DenormIo:
+class JoinIo:
     config: ResourceFactory[typing.TextIO]
     output: ResourceFactory[typing.TextIO]
 
 
-def create_denorm(io: DenormIo):
-    schema = DENORM_DATA_JSON_FORMAT.load(io.config)
+def create_join(io: JoinIo):
+    schema = JOIN_DATA_JSON_FORMAT.load(io.config)
 
     with io.output() as f:
         for statement in _statements(schema):
             print(f"{statement};\n", file=f)
 
 
-def _statements(config: Denorm):
-    if config.query is not None:
-        lock_table = config.sql_object(f"{config.id}__lock")
+def _statements(config: Join):
+    lock_table = config.sql_object(f"{config.id}__lock")
 
-        yield from _create_lock_table(table=lock_table, target=config.target)
+    yield from _create_lock_table(table=lock_table, target=config.target)
 
-    if config.consistency == DenormConsistency.DEFERRED:
+    if config.consistency == JoinConsistency.DEFERRED:
         key_table = SqlObject(f"{config.id}__key")
         setup_function = config.sql_object(f"{config.id}__setup")
         refresh_table = SqlObject("pg_temp", f"{config.id}__refresh")
@@ -130,27 +128,25 @@ def _statements(config: Denorm):
 
 def _create_change_function(
     function: SqlObject,
-    deps: typing.List[DenormTable],
-    hooks: DenormHooks,
+    deps: typing.List[JoinTable],
+    hooks: JoinHooks,
     id: str,
     key_table: typing.Optional[SqlObject],
     lock_table: typing.Optional[SqlObject],
-    query: typing.Optional[str],
+    query: str,
     refresh_table: typing.Optional[SqlObject],
     setup_function: typing.Optional[SqlObject],
-    table: DenormTable,
-    target: DenormTarget,
+    table: JoinTable,
+    target: JoinTarget,
 ):
-    key_sql = ", ".join(str(SqlIdentifier(column)) for column in target.key)
+    key_sql = SqlList([SqlIdentifier(column) for column in target.key])
 
     key_query = ""
     for dep in reversed(deps):
         table_sql = SqlObject("_change") if table.id == dep.id else dep.sql
 
         if dep.key is not None:
-            dep_columns_sql = ", ".join(
-                str(SqlObject(dep.id, column)) for column in dep.key
-            )
+            dep_columns_sql = SqlList([SqlObject(dep.id, column) for column in dep.key])
             key_query += f"SELECT DISTINCT {dep_columns_sql}"
             key_query += f"\nFROM"
             key_query += f"\n  {table_sql} AS {SqlIdentifier(dep.id)}"
@@ -188,7 +184,7 @@ LANGUAGE plpgsql AS $$
   END;
 $$
 """.strip()
-    elif query is not None:
+    else:
         update_sql = _update_sql(target=target, lock_table=lock_table, query=query)
 
         yield f"""
@@ -214,25 +210,9 @@ LANGUAGE plpgsql AS $$
   END;
 $$
 """.strip()
-    else:
-        yield f"""
-CREATE FUNCTION {function} () RETURNS trigger
-LANGUAGE plpgsql AS $$
-  BEGIN
-{indent(before, 2)}
-    INSERT INTO {target.sql} ({key_sql})
-{indent(key_query, 2)}
-    ON CONFLICT ({key_sql}) DO UPDATE
-        SET {conflict_update(target.key)}
-        WHERE false;
-
-    RETURN NULL;
-  END;
-$$
-""".strip()
 
 
-def _create_change_triggers(table: DenormTable, change_function: SqlObject, id: str):
+def _create_change_triggers(table: JoinTable, change_function: SqlObject, id: str):
     delete_trigger = SqlIdentifier(f"{id}__del__{table.id}")
     insert_trigger = SqlIdentifier(f"{id}__ins__{table.id}")
     update_old_trigger = SqlIdentifier(f"{id}__upd1__{table.id}")
@@ -263,8 +243,8 @@ FOR EACH STATEMENT EXECUTE PROCEDURE {change_function}()
 """.strip()
 
 
-def _create_lock_table(table: SqlObject, target: DenormTarget):
-    key_sql = ", ".join(str(SqlIdentifier(column)) for column in target.key)
+def _create_lock_table(table: SqlObject, target: JoinTarget):
+    key_sql = SqlList([SqlIdentifier(column) for column in target.key])
 
     yield f"""
 CREATE UNLOGGED TABLE {table}
@@ -289,9 +269,9 @@ def _create_refresh_function(
     lock_table: SqlObject,
     query: str,
     refresh_table: SqlObject,
-    target: DenormTarget,
+    target: JoinTarget,
 ):
-    key_sql = ", ".join(str(SqlIdentifier(column)) for column in target.key)
+    key_sql = SqlList([SqlIdentifier(column) for column in target.key])
 
     update_sql = _update_sql(target=target, lock_table=lock_table, query=query)
 
@@ -333,9 +313,9 @@ def _create_setup_function(
     key_table: SqlObject,
     refresh_table: SqlObject,
     refresh_function: SqlObject,
-    target: DenormTarget,
+    target: JoinTarget,
 ):
-    key_sql = ", ".join(str(SqlIdentifier(column)) for column in target.key)
+    key_sql = SqlList([SqlIdentifier(column) for column in target.key])
 
     yield f"""
 CREATE FUNCTION {function} () RETURNS void
@@ -368,19 +348,21 @@ COMMENT ON FUNCTION {function} IS {SqlLiteral(f"Set up temp tables for {id}")}
 """.strip()
 
 
-def _update_sql(target: DenormTarget, lock_table: SqlObject, query: str):
+def _update_sql(target: JoinTarget, lock_table: SqlObject, query: str):
     data_conflict_sql = conflict_update(
         [column for column in target.columns if column not in target.key]
     )
 
-    target_columns_sql = ", ".join(
-        str(SqlIdentifier(column))
-        for column in (target.columns if target.columns else target.key)
+    target_columns_sql = SqlList(
+        [
+            SqlIdentifier(column)
+            for column in (target.columns if target.columns else target.key)
+        ]
     )
 
-    key_sql = ", ".join(str(SqlIdentifier(column)) for column in target.key)
-    l_keys = ", ".join(str(SqlObject("l", column)) for column in target.key)
-    t_keys = ", ".join(str(SqlObject("t", column)) for column in target.key)
+    key_sql = SqlList([SqlIdentifier(column) for column in target.key])
+    l_keys = SqlList([SqlObject("l", column) for column in target.key])
+    t_keys = SqlList([SqlObject("t", column) for column in target.key])
 
     return f"""
 WITH

@@ -10,7 +10,8 @@ maintenance, materialized view
 
 - [Operations](#operations)
   - [Agg](#agg)
-  - [Denorm](#denorm)
+  - [Key](#key)
+  - [Join](#join)
   - [Features](#features)
 - [Performance](#performance)
 - [Migration](#migration)
@@ -37,7 +38,16 @@ GROUP BY 1
 
 For full documentation, see [Agg](doc/agg.md).
 
-### Denorm
+### Key
+
+Key is similar to [join](#join), but inserts only the keys of the changed
+records into the table.
+
+This could be used as a queue.
+
+For full documentation, see [Key](doc/key.md).
+
+### Join
 
 Create a materialized join. For example, create an incrementally updated table
 of the following:
@@ -58,7 +68,7 @@ FROM
   ) AS a
 ```
 
-For full documentation, see [Denorm](doc/denorm.md).
+For full documentation, see [Join](doc/join.md).
 
 ### Features
 
@@ -69,16 +79,17 @@ For full documentation, see [Denorm](doc/denorm.md).
 
 ## Performance
 
-Denormalization exchanges slower write performance for higher read performance.
+Materialized views exchange slower write performance for higher read
+performance.
 
-While it's impossible to completely escape that fundamental trade-off, Denorm
-has been created to be on par with hand-tuned methods.
+While it's impossible to completely escape that fundamental trade-off, Denorm is
+to be on par with hand-tuned methods.
 
 Statement triggers reduce overhead for modifying many records.
 
 When applicable, Denorm uses tables with `ON COMMIT DELETE` to minimize I/O
 overhead. However, since PostgreSQL does not support global temporary tables,
-Denorm uses session temp tables. Thus the first update in a session may have
+Denorm must use session temp tables. Thus the first update in a session may have
 several ms of overhead in setting up these tables. Be sure to pool connections
 and vacuum reguarly to prevent system tables from bloating.
 

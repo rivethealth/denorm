@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema",
-  "description": "Configuration for denorm",
+  "description": "Configuration for join",
   "definitions": {
     "hook": {
       "default": {
@@ -81,8 +81,7 @@
     "target": {
       "properties": {
         "columns": {
-          "default": null,
-          "description": "Columns, required if query is set",
+          "description": "Columns",
           "items": {
             "type": "string"
           },
@@ -109,6 +108,7 @@
         }
       },
       "required": [
+        "columns",
         "key",
         "name"
       ]
@@ -117,7 +117,7 @@
   "properties": {
     "consistency": {
       "default": "immedidate",
-      "description": "Consistency level. Deferred is only relevant when query is used.",
+      "description": "Consistency level",
       "enum": [
         "deferred",
         "immediate"
@@ -133,7 +133,6 @@
       "type": "string"
     },
     "query": {
-      "default": null,
       "description": "Query to populate the target table",
       "type": "string"
     },
@@ -154,9 +153,10 @@
   },
   "required": [
     "id",
+    "query",
     "tables",
     "target"
   ],
-  "title": "Denorm",
+  "title": "Join config",
   "type": "object"
 }

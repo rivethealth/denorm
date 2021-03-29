@@ -145,6 +145,14 @@ class SqlObject:
         return ".".join(str(SqlIdentifier(name)) for name in self.names)
 
 
+@dataclasses.dataclass
+class SqlList:
+    parts: typing.List
+
+    def __str__(self) -> str:
+        return ", ".join(str(part) for part in self.parts)
+
+
 def conflict_update(columns: typing.List[str]) -> str:
     return ", ".join(
         f"{SqlIdentifier(column)} = excluded.{SqlIdentifier(column)}"

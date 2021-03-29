@@ -1,4 +1,4 @@
-# Denormalization
+# Join
 
 ## Generated objects
 
@@ -173,4 +173,4 @@ This option is only valid on single-table sources.
 
 ## Example
 
-For a full working example, see [Denorm Example](denorm-example.md).
+For a full working example, see [Join example](join-example.md).

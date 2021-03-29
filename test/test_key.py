@@ -15,9 +15,8 @@ _SCHEMA_SQL = """
         parent_id int REFERENCES parent (id)
     );
 
-    CREATE TABLE child_full (
-        id int PRIMARY KEY,
-        parent_name text NOT NULL
+    CREATE TABLE child_key (
+        id int PRIMARY KEY
     );
 """
 
@@ -40,16 +39,9 @@ _SCHEMA_JSON = {
     ],
     "target": {
         "key": ["id"],
-        "columns": ["id", "parent_name"],
-        "name": "child_full",
+        "name": "child_key",
         "schema": "public",
     },
-    "query": """
-        SELECT c.id, p.name
-        FROM $1 AS d
-            JOIN child c ON d.id = c.id
-            JOIN parent p ON c.parent_id = p.id
-    """,
 }
 
 
@@ -64,7 +56,7 @@ def test_denorm(pg_database):
         output = run_process(
             [
                 "denorm",
-                "create-denorm",
+                "create-key",
                 "--schema",
                 schema_file,
             ]
@@ -84,6 +76,6 @@ def test_denorm(pg_database):
             )
 
         with connection("") as conn, transaction(conn) as cur:
-            cur.execute("SELECT * FROM child_full ORDER BY id")
+            cur.execute("SELECT * FROM child_key ORDER BY id")
             result = cur.fetchall()
-            assert result == [(1, "A"), (2, "A"), (3, "B")]
+            assert result == [(1,), (2,), (3,)]

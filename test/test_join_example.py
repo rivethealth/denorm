@@ -87,7 +87,7 @@ def test_denorm(pg_database):
         output = run_process(
             [
                 "denorm",
-                "create-denorm",
+                "create-join",
                 "--schema",
                 schema_file,
             ]
