@@ -23,10 +23,10 @@ optional arguments:
   --output OUTPUT
 ```
 
-## create-key
+## create-join
 
 ```sh
-usage: denorm create-key [-h] [--schema SCHEMA] [--output OUTPUT]
+usage: denorm create-join [-h] [--schema SCHEMA] [--output OUTPUT]
 
 optional arguments:
   -h, --help       show this help message and exit
@@ -34,10 +34,10 @@ optional arguments:
   --output OUTPUT
 ```
 
-## create-join
+## create-key
 
 ```sh
-usage: denorm create-join [-h] [--schema SCHEMA] [--output OUTPUT]
+usage: denorm create-key [-h] [--schema SCHEMA] [--output OUTPUT]
 
 optional arguments:
   -h, --help       show this help message and exit

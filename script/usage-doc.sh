@@ -17,7 +17,7 @@ echo
 
 usage common denorm --help
 usage create-agg denorm create-agg --help
-usage create-key denorm create-key --help
 usage create-join denorm create-join --help
+usage create-key denorm create-key --help
 
 "$base/../node_modules/.bin/prettier" --write "$base/../doc/usage.md"

@@ -10,9 +10,10 @@ maintenance, materialized view
 
 - [Operations](#operations)
   - [Agg](#agg)
-  - [Key](#key)
   - [Join](#join)
-  - [Features](#features)
+  - [Key](#key)
+- [Usage](#usage)
+- [Features](#features)
 - [Performance](#performance)
 - [Migration](#migration)
 - [Limitations](#limitations)
@@ -38,15 +39,6 @@ GROUP BY 1
 
 For full documentation, see [Agg](doc/agg.md).
 
-### Key
-
-Key is similar to [join](#join), but inserts only the keys of the changed
-records into the table.
-
-This could be used as a queue.
-
-For full documentation, see [Key](doc/key.md).
-
 ### Join
 
 Create a materialized join. For example, create an incrementally updated table
@@ -69,6 +61,15 @@ FROM
 ```
 
 For full documentation, see [Join](doc/join.md).
+
+### Key
+
+Key is similar to [join](#join), but inserts only the keys of the changed
+records into the table.
+
+This could be used as a queue.
+
+For full documentation, see [Key](doc/key.md).
 
 ## Usage
 
