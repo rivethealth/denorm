@@ -1,5 +1,7 @@
 # Denorm
 
+[![PyPI](https://img.shields.io/pypi/v/denorm)](https://pypi.org/project/denorm/)
+
 Denormalized and aggregated tables for PostgreSQL.
 
 Keywords: PostgreSQL, denormalization, aggregation, incremental view
