@@ -72,7 +72,7 @@ PY_SRC := $(shell find . $(TARGET:%=-not \$(LPAREN) -name % -prune \$(RPAREN)) -
 
 .PHONY: install
 install:
-	pip3 install -e .
+	pip3 install -e .[dev]
 
 .PHONY: package
 package: target/package.target

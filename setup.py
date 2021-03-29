@@ -26,6 +26,7 @@ setuptools.setup(
             "denorm=denorm.cli.main:main",
         ]
     },
+    extras_require={"dev": ["black", "pytest-env", "isort", "pytest"]},
     install_requires=["dataclasses-json", "jsonschema"],
     long_description=long_description,
     long_description_content_type="text/markdown",
