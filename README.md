@@ -30,7 +30,7 @@ pip3 install denorm
 
 ## Operations
 
-Denorm has three modes of operation:
+Denorm has two modes of operation:
 
 ### Agg
 
@@ -69,15 +69,6 @@ FROM
 ```
 
 For full documentation, see [Join](doc/join.md).
-
-### Key
-
-Key is similar to [join](#join), but inserts only the keys of the changed
-records into the table.
-
-This could be used as a queue.
-
-For full documentation, see [Key](doc/key.md).
 
 ## Usage
 

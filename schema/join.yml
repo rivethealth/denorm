@@ -92,6 +92,12 @@ properties:
   schema:
     description: Schema for created objects
     type: string
+  sync:
+    default: full
+    description: Synchronization mode
+    enum: [full, upsert]
+    title: Synchronization
+    type: string
   tables:
     description: Tables
     items: { $ref: "#/definitions/table" }

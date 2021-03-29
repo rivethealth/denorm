@@ -40,9 +40,10 @@ import yaml
 from .format import format
 from .formats.join import (
     JOIN_DATA_JSON_FORMAT,
-    Join,
+    JoinConfig,
     JoinConsistency,
     JoinHooks,
+    JoinSync,
     JoinTable,
     JoinTarget,
 )
@@ -66,7 +67,7 @@ def create_join(io: JoinIo):
             print(f"{statement};\n", file=f)
 
 
-def _statements(config: Join):
+def _statements(config: JoinConfig):
     lock_table = config.sql_object(f"{config.id}__lock")
 
     yield from _create_lock_table(table=lock_table, target=config.target)
@@ -83,6 +84,7 @@ def _statements(config: Join):
             lock_table=lock_table,
             refresh_table=refresh_table,
             query=config.query,
+            sync=config.sync,
             target=config.target,
             function=refresh_function,
         )
@@ -118,6 +120,7 @@ def _statements(config: Join):
             query=config.query,
             refresh_table=refresh_table,
             setup_function=setup_function,
+            sync=config.sync,
             table=table,
             target=config.target,
         )
@@ -135,9 +138,10 @@ def _create_change_function(
     id: str,
     key_table: typing.Optional[SqlObject],
     lock_table: typing.Optional[SqlObject],
-    query: str,
+    query: typing.Optional[str],
     refresh_table: typing.Optional[SqlObject],
     setup_function: typing.Optional[SqlObject],
+    sync: JoinSync,
     table: JoinTable,
     target: JoinTarget,
 ):
@@ -182,8 +186,10 @@ LANGUAGE plpgsql AS $$
   END;
 $$
 """.strip()
-    elif consistency == JoinConsistency.IMMEDIATE:
-        update_sql = _update_sql(target=target, lock_table=lock_table, query=query)
+    elif query is not None:
+        update_sql = _update_sql(
+            sync=sync, target=target, lock_table=lock_table, query=query
+        )
 
         yield f"""
 CREATE FUNCTION {function} () RETURNS trigger
@@ -204,6 +210,23 @@ LANGUAGE plpgsql AS $$
 
     -- clear locks
     DELETE FROM {lock_table};
+
+    RETURN NULL;
+  END;
+$$
+""".strip()
+    else:
+        yield f"""
+CREATE FUNCTION {function} () RETURNS trigger
+LANGUAGE plpgsql AS $$
+  BEGIN
+{indent(before, 2)}
+    INSERT INTO {target.sql} ({key_sql})
+{indent(key_query, 2)}
+    ORDER BY {key_sql}
+    ON CONFLICT ({key_sql}) DO UPDATE
+        SET {conflict_update(target.key)}
+        WHERE false;
 
     RETURN NULL;
   END;
@@ -268,11 +291,14 @@ def _create_refresh_function(
     lock_table: SqlObject,
     query: str,
     refresh_table: SqlObject,
+    sync: JoinSync,
     target: JoinTarget,
 ):
     key_sql = SqlList([SqlIdentifier(column) for column in target.key])
 
-    update_sql = _update_sql(target=target, lock_table=lock_table, query=query)
+    update_sql = _update_sql(
+        sync=sync, target=target, lock_table=lock_table, query=query
+    )
 
     yield f"""
 CREATE FUNCTION {function} () RETURNS trigger
@@ -349,23 +375,25 @@ COMMENT ON FUNCTION {function} IS {SqlLiteral(f"Set up temp tables for {id}")}
 """.strip()
 
 
-def _update_sql(target: JoinTarget, lock_table: SqlObject, query: str):
-    data_conflict_sql = conflict_update(
-        [column for column in target.columns if column not in target.key]
-    )
-
-    target_columns_sql = SqlList(
-        [
-            SqlIdentifier(column)
-            for column in (target.columns if target.columns else target.key)
-        ]
-    )
-
+def _update_sql(target: JoinTarget, sync: JoinSync, lock_table: SqlObject, query: str):
     key_sql = SqlList([SqlIdentifier(column) for column in target.key])
-    l_keys = SqlList([SqlObject("l", column) for column in target.key])
-    t_keys = SqlList([SqlObject("t", column) for column in target.key])
 
-    return f"""
+    if sync == JoinSync.FULL:
+        data_conflict_sql = conflict_update(
+            [column for column in target.columns if column not in target.key]
+        )
+
+        target_columns_sql = SqlList(
+            [
+                SqlIdentifier(column)
+                for column in (target.columns if target.columns else target.key)
+            ]
+        )
+
+        l_keys = SqlList([SqlObject("l", column) for column in target.key])
+        t_keys = SqlList([SqlObject("t", column) for column in target.key])
+
+        return f"""
 WITH
     _upsert AS (
         INSERT INTO {target.sql} ({target_columns_sql})
@@ -383,4 +411,13 @@ WHERE
         FROM _upsert
         WHERE ({key_sql}) = ({t_keys})
     );
+""".strip()
+    elif JoinSync.UPSERT:
+        return f"""
+INSERT INTO {target.sql} ({key_sql})
+{indent(key_query, 2)}
+    ORDER BY {key_sql}
+    ON CONFLICT ({key_sql}) DO UPDATE
+        SET {conflict_update(target.key)}
+        WHERE false;
 """.strip()

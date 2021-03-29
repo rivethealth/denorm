@@ -13,16 +13,21 @@ class JoinConsistency(enum.Enum):
     IMMEDIATE = "immediate"
 
 
+class JoinSync(enum.Enum):
+    FULL = "full"
+    UPSERT = "upsert"
+
+
 @dataclasses_json.dataclass_json(
     letter_case=dataclasses_json.LetterCase.CAMEL,
     undefined=dataclasses_json.Undefined.EXCLUDE,
 )
 @dataclasses.dataclass
 class JoinTarget:
-    columns: typing.List[str]
     key: typing.List[str]
     name: str
     schema: typing.Optional[str] = None
+    columns: typing.Optional[typing.List[str]] = None
 
     @property
     def sql(self) -> SqlObject:
@@ -93,7 +98,7 @@ class JoinHooks:
     undefined=dataclasses_json.Undefined.EXCLUDE,
 )
 @dataclasses.dataclass
-class Join:
+class JoinConfig:
     id: str
     query: str
     tables: typing.List[JoinTable]
@@ -101,6 +106,7 @@ class Join:
     consistency: JoinConsistency = JoinConsistency.IMMEDIATE
     hooks: JoinHooks = JoinHooks(before=None)
     schema: typing.Optional[str] = None
+    sync: JoinSync = JoinSync.FULL
 
     def sql_object(self, name):
         return (
@@ -113,6 +119,17 @@ class JoinInvalid(Exception):
         super().__init__(message)
 
 
+def validate_join(join: JoinConfig):
+    if join.consistency == JoinConsistency.DEFERRED and join.query is None:
+        raise JoinInvalid("Deferrable mode is only used with query")
+
+    if join.target.columns is None and join.query is not None:
+        raise JoinInvalid("Query requires target column list")
+
+
 JOIN_JSON_FORMAT = package_json_format("denorm.formats", "join.json")
 
-JOIN_DATA_JSON_FORMAT = DataJsonFormat(JOIN_JSON_FORMAT, Join.schema())
+JOIN_DATA_JSON_FORMAT = ValidatingDataJsonFormat(
+    DataJsonFormat(JOIN_JSON_FORMAT, JoinConfig.schema()),
+    validate_join,
+)
