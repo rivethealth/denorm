@@ -21,7 +21,7 @@ maintenance, materialized view
 
 ## Operations
 
-Denorm has two modes of operation:
+Denorm has three modes of operation:
 
 ### Agg
 
@@ -70,7 +70,11 @@ FROM
 
 For full documentation, see [Join](doc/join.md).
 
-### Features
+## Usage
+
+See [Usage](doc/usage.md).
+
+## Features
 
 - Efficient incremental updates
 - Arbitrarily complex SQL features and expressions

@@ -3,6 +3,10 @@ import argparse
 parser = argparse.ArgumentParser()
 subparsers = parser.add_subparsers(dest="command")
 
+create_key_parser = subparsers.add_parser("create-agg")
+create_key_parser.add_argument("--schema", default="-")
+create_key_parser.add_argument("--output", default="-")
+
 create_key_parser = subparsers.add_parser("create-key")
 create_key_parser.add_argument("--schema", default="-")
 create_key_parser.add_argument("--output", default="-")
