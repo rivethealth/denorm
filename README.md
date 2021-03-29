@@ -10,10 +10,8 @@ maintenance, materialized view
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
+- [Install](#install)
 - [Operations](#operations)
-  - [Agg](#agg)
-  - [Join](#join)
-  - [Key](#key)
 - [Usage](#usage)
 - [Features](#features)
 - [Performance](#performance)
@@ -21,6 +19,14 @@ maintenance, materialized view
 - [Limitations](#limitations)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+## Install
+
+### Pip
+
+```
+pip3 install denorm
+```
 
 ## Operations
 
