@@ -1,0 +1,162 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "description": "Configuration for denorm",
+  "definitions": {
+    "hook": {
+      "default": {
+        "before": null
+      },
+      "description": "Hook",
+      "properties": {
+        "schema": {
+          "title": "Schema",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "title": "Hook",
+      "type": "object"
+    },
+    "hooks": {
+      "default": {
+        "before": null
+      },
+      "description": "Hooks",
+      "properties": {
+        "before": {
+          "default": null,
+          "description": "function to run before queries",
+          "title": "Before",
+          "$ref": "#/definitions/hook"
+        }
+      },
+      "title": "Hook",
+      "type": "object"
+    },
+    "table": {
+      "description": "Table",
+      "properties": {
+        "dep": {
+          "default": null,
+          "description": "ID of dependency table",
+          "title": "Dependency",
+          "type": "string"
+        },
+        "id": {
+          "description": "ID of table",
+          "title": "ID",
+          "type": "string"
+        },
+        "key": {
+          "default": null,
+          "description": "SQL expressions for key values",
+          "items": {
+            "type": "string"
+          },
+          "title": "key",
+          "type": "array"
+        },
+        "join": {
+          "default": null,
+          "description": "SQL expression to join to dep",
+          "title": "join",
+          "type": "string"
+        },
+        "name": {
+          "description": "Name of table",
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "title": "Table",
+      "type": "object"
+    },
+    "target": {
+      "properties": {
+        "columns": {
+          "default": null,
+          "description": "Columns, required if query is set",
+          "items": {
+            "type": "string"
+          },
+          "title": "Columns",
+          "type": "array"
+        },
+        "key": {
+          "description": "Key columns",
+          "items": {
+            "type": "string"
+          },
+          "title": "Key",
+          "type": "array"
+        },
+        "schema": {
+          "description": "Schema of table",
+          "title": "Schema",
+          "type": "string"
+        },
+        "name": {
+          "description": "Name of table",
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "name"
+      ]
+    }
+  },
+  "properties": {
+    "consistency": {
+      "default": "immedidate",
+      "description": "Consistency level. Deferred is only relevant when query is used.",
+      "enum": [
+        "deferred",
+        "immediate"
+      ],
+      "title": "Consistency",
+      "type": "string"
+    },
+    "hooks": {
+      "$ref": "#/definitions/hooks"
+    },
+    "id": {
+      "description": "Name mangling to use for created objects",
+      "type": "string"
+    },
+    "query": {
+      "default": null,
+      "description": "Query to populate the target table",
+      "type": "string"
+    },
+    "schema": {
+      "description": "Schema for created objects",
+      "type": "string"
+    },
+    "tables": {
+      "description": "Tables",
+      "items": {
+        "$ref": "#/definitions/table"
+      },
+      "type": "array"
+    },
+    "target": {
+      "$ref": "#/definitions/target"
+    }
+  },
+  "required": [
+    "id",
+    "tables",
+    "target"
+  ],
+  "title": "Denorm",
+  "type": "object"
+}

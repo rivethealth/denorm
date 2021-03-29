@@ -11,7 +11,7 @@ SHELL := /bin/bash
 JOBS ?= $(shell nproc)
 MAKEFLAGS += -j $(JOBS) -r
 
-PATH += node_modules/.bin
+export PATH := $(PATH):node_modules/.bin
 
 LPAREN := (
 RPAREN := )
@@ -27,6 +27,20 @@ clean:
 	rm -fr $(TARGET)
 
 ###
+# Schema
+###
+
+SCHEMA_SRC := $(shell find schema -name '*.yml')
+SCHEMA_TGT := $(SCHEMA_SRC:schema/%.yml=denorm/formats/%.json)
+
+.PHONY: schema
+schema: $(SCHEMA_TGT)
+
+denorm/formats/%.json: schema/%.yml
+	mkdir -p $(@D)
+	< $< yq > $@
+
+###
 # Format
 ###
 FORMAT_SRC := $(shell find . $(TARGET:%=-not \$(LPAREN) -name % -prune \$(RPAREN)) -name '*.py')
@@ -38,14 +52,16 @@ format: target/format.target
 .PHONY: test-format
 test-format: target/format-test.target
 
-target/format.target: target/.node_modules.target $(FORMAT_SRC) $(PRETTIER_SRC) .prettierrc.yml
-	black $(FORMAT_SRC)
+target/format.target: target/node_modules.target $(FORMAT_SRC) $(PRETTIER_SRC) .prettierrc.yml
+	doctoc --notitle --maxlevel 3 README.md
+	isort --profile black $(FORMAT_SRC)
+	black -t py37 $(FORMAT_SRC)
 	prettier -w $(PRETTIER_SRC)
 	mkdir -p $(@D)
 	touch $@ target/format-test.target
 
 target/format-test.target: $(FORMAT_SRC)
-	black --check $(FORMAT_SRC)
+	black --check -t py37 $(FORMAT_SRC)
 	mkdir -p $(@D)
 	touch $@ target/format.target
 
@@ -84,10 +100,18 @@ docker:
 	docker build -t rivethealth/aws-saml .
 
 ###
+# Test
+###
+
+.PHONY: test
+test: $(SCHEMA_TGT)
+	pytest
+
+###
 # Yarn
 ###
 
-target/.node_modules.target: package.json yarn.lock
+target/node_modules.target: package.json yarn.lock
 	mkdir -p $(@D)
 	yarn install
 	> $@

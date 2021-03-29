@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-import setuptools
 import os
+
+import setuptools
 
 version = {}
 with open("denorm/version.py", "r") as f:
@@ -22,14 +23,10 @@ setuptools.setup(
     description="Maintain denormalized and aggregated PostgreSQL tables",
     entry_points={
         "console_scripts": [
-            "denorm=denorm.main:main",
+            "denorm=denorm.cli.main:main",
         ]
     },
-    extras_require={
-        "binary": ["psycopg2-binary"],
-        "source": ["psycopg2"],
-    },
-    install_requires=["dataclasses-json", "jsonschema", "orderedset", "PyYAML"],
+    install_requires=["dataclasses-json", "jsonschema"],
     long_description=long_description,
     long_description_content_type="text/markdown",
     name="denorm",
