@@ -196,6 +196,7 @@ LANGUAGE plpgsql AS $$
     -- lock keys
     INSERT INTO {lock_table} ({key_sql})
 {indent(key_query, 2)}
+    ORDER BY {key_sql}
     ON CONFLICT ({key_sql}) DO UPDATE
         SET {conflict_update(target.key)}
         WHERE false;
@@ -286,7 +287,9 @@ BEGIN
             RETURNING *
         )
     INSERT INTO {lock_table} ({key_sql})
-    TABLE _change
+    SELECT *
+    FROM _change
+    ORDER BY *
     ON CONFLICT ({key_sql}) DO UPDATE
         SET {conflict_update(target.key)}
         WHERE false;

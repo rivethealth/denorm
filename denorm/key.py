@@ -106,6 +106,7 @@ LANGUAGE plpgsql AS $$
 {indent(before, 2)}
     INSERT INTO {target.sql} ({key_sql})
 {indent(key_query, 2)}
+    ORDER BY {key_sql}
     ON CONFLICT ({key_sql}) DO UPDATE
         SET {conflict_update(target.key)}
         WHERE false;
