@@ -108,6 +108,7 @@ def _statements(config: Join):
         deps = [table_by_id[id] for id in dep_ids]
 
         yield from _create_change_function(
+            consistency=config.consistency,
             hooks=config.hooks,
             deps=deps,
             function=change_function,
@@ -128,6 +129,7 @@ def _statements(config: Join):
 
 def _create_change_function(
     function: SqlObject,
+    consistency: JoinConsistency,
     deps: typing.List[JoinTable],
     hooks: JoinHooks,
     id: str,
@@ -160,11 +162,7 @@ def _create_change_function(
     else:
         before = ""
 
-    if (
-        key_table is not None
-        and refresh_table is not None
-        and refresh_table is not None
-    ):
+    if consistency == JoinConsistency.DEFERRED:
         yield f"""
 CREATE FUNCTION {function} () RETURNS trigger
 LANGUAGE plpgsql AS $$
@@ -184,7 +182,7 @@ LANGUAGE plpgsql AS $$
   END;
 $$
 """.strip()
-    else:
+    elif consistency == JoinConsistency.IMMEDIATE:
         update_sql = _update_sql(target=target, lock_table=lock_table, query=query)
 
         yield f"""
@@ -289,7 +287,7 @@ BEGIN
     INSERT INTO {lock_table} ({key_sql})
     SELECT *
     FROM _change
-    ORDER BY *
+    ORDER BY {key_sql}
     ON CONFLICT ({key_sql}) DO UPDATE
         SET {conflict_update(target.key)}
         WHERE false;
@@ -324,7 +322,7 @@ def _create_setup_function(
 CREATE FUNCTION {function} () RETURNS void
 LANGUAGE plpgsql AS $$
   BEGIN
-    IF to_regclass({SqlIdentifier(str(refresh_table))}) IS NOT NULL THEN
+    IF to_regclass({SqlLiteral(str(refresh_table))}) IS NOT NULL THEN
       RETURN;
     END IF;
 

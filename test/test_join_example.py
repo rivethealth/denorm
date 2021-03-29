@@ -76,7 +76,7 @@ _SCHEMA_JSON = {
 }
 
 
-def test_denorm(pg_database):
+def test_join_example(pg_database):
     with temp_file("denorm-") as schema_file:
         with connection("") as conn, transaction(conn) as cur:
             cur.execute(_SCHEMA_SQL)
