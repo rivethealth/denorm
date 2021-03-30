@@ -1,5 +1,10 @@
 # Join
 
+## Schema
+
+See the JSONSchema ([JSON](../denorm/formats/join.json)
+[YAML](../schema/join.yml)) for documentation of full options.
+
 ## Generated objects
 
 ID is used to name database objects.

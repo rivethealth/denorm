@@ -34,29 +34,27 @@ _SCHEMA_SQL = """
 _SCHEMA_JSON = {
     "id": "book_full",
     "schema": "public",
+    "tables": {
+        "author": {
+            "dep": "book_author",
+            "depJoin": "author.id = book_author.author_id",
+            "name": "book_author",
+            "schema": "public",
+        },
+        "book": {"name": "book", "schema": "public", "targetKey": ["id"]},
+        "book_author": {
+            "dep": "book",
+            "depJoin": "book_author.book_id = book.id",
+            "name": "book_author",
+            "schema": "public",
+        },
+    },
     "target": {
         "columns": ["id", "title", "author_names"],
-        "key": ["id"],
         "name": "book_full",
         "schema": "public",
+        "key": ["id"],
     },
-    "tables": [
-        {"id": "book", "key": ["id"], "name": "book", "schema": "public"},
-        {
-            "id": "book_author",
-            "dep": "book",
-            "join": "book_author.book_id = book.id",
-            "name": "book_author",
-            "schema": "public",
-        },
-        {
-            "id": "author",
-            "dep": "book_author",
-            "join": "author.id = book_author.author_id",
-            "name": "book_author",
-            "schema": "public",
-        },
-    ],
     "query": """
     SELECT
         b.id,

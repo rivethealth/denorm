@@ -1,4 +1,3 @@
-import copy
 import json
 
 from file import temp_file
@@ -16,9 +15,8 @@ _SCHEMA_SQL = """
         parent_id int REFERENCES parent (id)
     );
 
-    CREATE TABLE child_full (
-        id int PRIMARY KEY,
-        parent_name text NOT NULL
+    CREATE TABLE child_key (
+        id int PRIMARY KEY
     );
 """
 
@@ -37,22 +35,16 @@ _SCHEMA_JSON = {
             "schema": "public",
         },
     },
+    "sync": "upsert",
     "target": {
         "key": ["id"],
-        "columns": ["id", "parent_name"],
-        "name": "child_full",
+        "name": "child_key",
         "schema": "public",
     },
-    "query": """
-        SELECT c.id, p.name
-        FROM $1 AS d
-            JOIN child c ON d.id = c.id
-            JOIN parent p ON c.parent_id = p.id
-    """,
 }
 
 
-def test_join(pg_database):
+def test_join_key(pg_database):
     with temp_file("denorm-") as schema_file:
         with connection("") as conn, transaction(conn) as cur:
             cur.execute(_SCHEMA_SQL)
@@ -83,44 +75,6 @@ def test_join(pg_database):
             )
 
         with connection("") as conn, transaction(conn) as cur:
-            cur.execute("SELECT * FROM child_full ORDER BY id")
+            cur.execute("SELECT * FROM child_key ORDER BY id")
             result = cur.fetchall()
-            assert result == [(1, "A"), (2, "A"), (3, "B")]
-
-
-def test_join_deferred(pg_database):
-    with temp_file("denorm-") as schema_file:
-        with connection("") as conn, transaction(conn) as cur:
-            cur.execute(_SCHEMA_SQL)
-
-        with open(schema_file, "w") as f:
-            schema_json = copy.deepcopy(_SCHEMA_JSON)
-            schema_json["consistency"] = "deferred"
-            json.dump(schema_json, f)
-
-        output = run_process(
-            [
-                "denorm",
-                "create-join",
-                "--schema",
-                schema_file,
-            ]
-        )
-        with connection("") as conn, transaction(conn) as cur:
-            cur.execute(output.decode("utf-8"))
-
-        with connection("") as conn, transaction(conn) as cur:
-            cur.execute(
-                """
-                    INSERT INTO parent (id, name)
-                    VALUES (1, 'A'), (2, 'B');
-
-                    INSERT INTO child (id, parent_id)
-                    VALUES (1, 1), (2, 1), (3, 2);
-                """
-            )
-
-        with connection("") as conn, transaction(conn) as cur:
-            cur.execute("SELECT * FROM child_full ORDER BY id")
-            result = cur.fetchall()
-            assert result == [(1, "A"), (2, "A"), (3, "B")]
+            assert result == [(1,), (2,), (3,)]

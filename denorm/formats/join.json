@@ -1,36 +1,19 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema",
-  "description": "Configuration for join",
+  "description": "Configuration for join.",
   "definitions": {
     "hook": {
-      "default": {
-        "before": null
-      },
-      "description": "Hook",
+      "description": "Hook function.",
       "properties": {
         "schema": {
+          "description": "Schema of function.",
           "title": "Schema",
           "type": "string"
         },
         "name": {
+          "description": "Name of function.",
           "title": "Name",
           "type": "string"
-        }
-      },
-      "title": "Hook",
-      "type": "object"
-    },
-    "hooks": {
-      "default": {
-        "before": null
-      },
-      "description": "Hooks",
-      "properties": {
-        "before": {
-          "default": null,
-          "description": "function to run before queries",
-          "title": "Before",
-          "$ref": "#/definitions/hook"
         }
       },
       "title": "Hook",
@@ -38,55 +21,96 @@
     },
     "table": {
       "description": "Table",
-      "properties": {
-        "dep": {
-          "default": null,
-          "description": "ID of dependency table",
-          "title": "Dependency",
-          "type": "string"
-        },
-        "id": {
-          "description": "ID of table",
-          "title": "ID",
-          "type": "string"
-        },
-        "key": {
-          "default": null,
-          "description": "SQL expressions for key values",
-          "items": {
-            "type": "string"
+      "allOf": [
+        {
+          "properties": {
+            "dep": {
+              "default": null,
+              "description": "ID of dependency table.",
+              "title": "Dependency",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "depJoin": {
+              "default": null,
+              "description": "SQL expression to join to dep.",
+              "title": "join",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "name": {
+              "description": "Name of table",
+              "title": "Name",
+              "type": "string"
+            },
+            "targetKey": {
+              "default": null,
+              "description": "SQL expressions for target key values.",
+              "items": {
+                "type": "string"
+              },
+              "title": "key",
+              "type": [
+                "array",
+                "null"
+              ]
+            }
           },
-          "title": "key",
-          "type": "array"
+          "required": [
+            "name"
+          ],
+          "type": "object"
         },
-        "join": {
-          "default": null,
-          "description": "SQL expression to join to dep",
-          "title": "join",
-          "type": "string"
-        },
-        "name": {
-          "description": "Name of table",
-          "title": "Name",
-          "type": "string"
+        {
+          "oneOf": [
+            {
+              "properties": {
+                "dep": {
+                  "type": "string"
+                },
+                "depJoin": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "dep",
+                "depJoin"
+              ],
+              "type": "object"
+            },
+            {
+              "properties": {
+                "targetKey": {
+                  "type": "array"
+                }
+              },
+              "required": [
+                "targetKey"
+              ],
+              "type": "object"
+            }
+          ]
         }
-      },
-      "required": [
-        "id",
-        "name"
       ],
-      "title": "Table",
-      "type": "object"
+      "title": "Table"
     },
     "target": {
       "properties": {
         "columns": {
+          "default": null,
           "description": "Columns",
           "items": {
             "type": "string"
           },
           "title": "Columns",
-          "type": "array"
+          "type": [
+            "array",
+            "null"
+          ]
         },
         "key": {
           "description": "Key columns",
@@ -97,7 +121,8 @@
           "type": "array"
         },
         "schema": {
-          "description": "Schema of table",
+          "default": null,
+          "description": "Schema of table. If null, the table is not schema-qualified.",
           "title": "Schema",
           "type": "string"
         },
@@ -108,7 +133,6 @@
         }
       },
       "required": [
-        "columns",
         "key",
         "name"
       ]
@@ -125,24 +149,31 @@
       "title": "Consistency",
       "type": "string"
     },
-    "hooks": {
-      "$ref": "#/definitions/hooks"
-    },
     "id": {
-      "description": "Name mangling to use for created objects",
+      "description": "ID for name mangling created objects.",
+      "title": "ID",
       "type": "string"
     },
     "query": {
-      "description": "Query to populate the target table",
+      "description": "Query to populate the target table.",
+      "title": "Query",
       "type": "string"
     },
+    "setup": {
+      "$ref": "#/definitions/hook",
+      "default": null,
+      "description": "Setup function.",
+      "title": "Setup"
+    },
     "schema": {
-      "description": "Schema for created objects",
+      "default": null,
+      "description": "Schema for created objects. If not set, the default schema is used.",
+      "title": "Schema",
       "type": "string"
     },
     "sync": {
       "default": "full",
-      "description": "Synchronization mode",
+      "description": "Synchronization mode. Full upserts and deletes records. Upsert only upserts records.",
       "enum": [
         "full",
         "upsert"
@@ -151,11 +182,12 @@
       "type": "string"
     },
     "tables": {
-      "description": "Tables",
-      "items": {
+      "additionalProperties": {
         "$ref": "#/definitions/table"
       },
-      "type": "array"
+      "description": "Map from ID to table.",
+      "title": "Tables",
+      "type": "object"
     },
     "target": {
       "$ref": "#/definitions/target"
@@ -163,7 +195,6 @@
   },
   "required": [
     "id",
-    "query",
     "tables",
     "target"
   ],

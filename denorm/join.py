@@ -42,7 +42,7 @@ from .formats.join import (
     JOIN_DATA_JSON_FORMAT,
     JoinConfig,
     JoinConsistency,
-    JoinHooks,
+    JoinHook,
     JoinSync,
     JoinTable,
     JoinTarget,
@@ -102,16 +102,15 @@ def _statements(config: JoinConfig):
         setup_function = None
         refresh_table = None
 
-    table_by_id = {table.id: table for table in config.tables}
-    for table in config.tables:
-        change_function = config.sql_object(f"{config.id}__chg__{table.id}")
+    for id, table in config.tables.items():
+        change_function = config.sql_object(f"{config.id}__chg__{id}")
 
-        dep_ids = recurse(table.id, lambda id: table_by_id[id].dep)
-        deps = [table_by_id[id] for id in dep_ids]
+        dep_ids = recurse(id, lambda id: config.tables[id].dep)
+        deps = [(id, config.tables[id]) for id in dep_ids]
 
         yield from _create_change_function(
             consistency=config.consistency,
-            hooks=config.hooks,
+            setup=config.setup,
             deps=deps,
             function=change_function,
             id=config.id,
@@ -126,20 +125,20 @@ def _statements(config: JoinConfig):
         )
 
         yield from _create_change_triggers(
-            table=table, change_function=change_function, id=config.id
+            table_id=id, table=table, change_function=change_function, id=config.id
         )
 
 
 def _create_change_function(
     function: SqlObject,
     consistency: JoinConsistency,
-    deps: typing.List[JoinTable],
-    hooks: JoinHooks,
+    deps: typing.Tuple[str, typing.List[JoinTable]],
     id: str,
     key_table: typing.Optional[SqlObject],
     lock_table: typing.Optional[SqlObject],
     query: typing.Optional[str],
     refresh_table: typing.Optional[SqlObject],
+    setup: typing.Optional[JoinHook],
     setup_function: typing.Optional[SqlObject],
     sync: JoinSync,
     table: JoinTable,
@@ -148,21 +147,23 @@ def _create_change_function(
     key_sql = SqlList([SqlIdentifier(column) for column in target.key])
 
     key_query = ""
-    for dep in reversed(deps):
-        table_sql = SqlObject("_change") if table.id == dep.id else dep.sql
+    for i, (dep_id, dep) in enumerate(reversed(deps)):
+        table_sql = SqlObject("_change") if i == len(deps) - 1 else dep.sql
 
-        if dep.key is not None:
-            dep_columns_sql = SqlList([SqlObject(dep.id, column) for column in dep.key])
+        if dep.target_key is not None:
+            dep_columns_sql = SqlList(
+                [SqlObject(dep_id, column) for column in dep.target_key]
+            )
             key_query += f"SELECT DISTINCT {dep_columns_sql}"
             key_query += f"\nFROM"
-            key_query += f"\n  {table_sql} AS {SqlIdentifier(dep.id)}"
+            key_query += f"\n  {table_sql} AS {SqlIdentifier(dep_id)}"
         else:
             key_query += (
-                f"\n  JOIN {table_sql} AS {SqlIdentifier(dep.id)} ON {dep.join}"
+                f"\n  JOIN {table_sql} AS {SqlIdentifier(dep_id)} ON {dep.dep_join}"
             )
 
-    if hooks.before is not None:
-        before = f"PERFORM {hooks.before.sql}();"
+    if setup is not None:
+        before = f"PERFORM {setup.sql}();"
     else:
         before = ""
 
@@ -234,11 +235,13 @@ $$
 """.strip()
 
 
-def _create_change_triggers(table: JoinTable, change_function: SqlObject, id: str):
-    delete_trigger = SqlIdentifier(f"{id}__del__{table.id}")
-    insert_trigger = SqlIdentifier(f"{id}__ins__{table.id}")
-    update_old_trigger = SqlIdentifier(f"{id}__upd1__{table.id}")
-    update_new_trigger = SqlIdentifier(f"{id}__upd2__{table.id}")
+def _create_change_triggers(
+    table_id: str, table: JoinTable, change_function: SqlObject, id: str
+):
+    delete_trigger = SqlIdentifier(f"{id}__del__{table_id}")
+    insert_trigger = SqlIdentifier(f"{id}__ins__{table_id}")
+    update_old_trigger = SqlIdentifier(f"{id}__upd1__{table_id}")
+    update_new_trigger = SqlIdentifier(f"{id}__upd2__{table_id}")
 
     yield f"""
 CREATE TRIGGER {delete_trigger} AFTER DELETE ON {table.sql}

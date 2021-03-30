@@ -44,12 +44,11 @@ class JoinTarget:
 )
 @dataclasses.dataclass
 class JoinTable:
-    id: str
     name: str
     dep: typing.Optional[str] = None
-    key: typing.Optional[typing.List[str]] = None
-    join: typing.Optional[str] = None
+    dep_join: typing.Optional[str] = None
     schema: typing.Optional[str] = None
+    target_key: typing.Optional[typing.List[str]] = None
 
     def __eq__(self, other):
         return self is other
@@ -88,24 +87,15 @@ class JoinHook:
     letter_case=dataclasses_json.LetterCase.CAMEL,
     undefined=dataclasses_json.Undefined.EXCLUDE,
 )
-@dataclasses.dataclass(frozen=True)
-class JoinHooks:
-    before: typing.Optional[JoinHook] = None
-
-
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass
 class JoinConfig:
     id: str
-    query: str
-    tables: typing.List[JoinTable]
+    tables: typing.Dict[str, JoinTable]
     target: JoinTarget
     consistency: JoinConsistency = JoinConsistency.IMMEDIATE
-    hooks: JoinHooks = JoinHooks(before=None)
+    query: typing.Optional[str] = None
     schema: typing.Optional[str] = None
+    setup: typing.Optional[JoinHook] = None
     sync: JoinSync = JoinSync.FULL
 
     def sql_object(self, name):

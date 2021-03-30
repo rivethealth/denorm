@@ -44,7 +44,7 @@ denorm/formats/%.json: schema/%.yml
 # Format
 ###
 FORMAT_SRC := $(shell find . $(TARGET:%=-not \$(LPAREN) -name % -prune \$(RPAREN)) -name '*.py')
-PRETTIER_SRC := $(shell find . $(TARGET:%=-not \$(LPAREN) -name % -prune \$(RPAREN)) \$(LPAREN) -name '*.md' \$(RPAREN))
+PRETTIER_SRC := $(shell find . $(TARGET:%=-not \$(LPAREN) -name % -prune \$(RPAREN)) \$(LPAREN) -name '*.json' -o -name '*.md' -o -name '*.yml' \$(RPAREN))
 
 .PHONY: format
 format: target/format.target
