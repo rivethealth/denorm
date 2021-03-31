@@ -109,7 +109,7 @@ RESERVED_WORDS = [
 
 _RESERVED_WORDS_SET = set(RESERVED_WORDS)
 
-_IDENTIFIER_PATTERN = re.compile(r"^[a-zA-Z_][a-zA-Z0-9$_]+$")
+_IDENTIFIER_PATTERN = re.compile(r"^[a-zA-Z_][a-zA-Z0-9$_]*$")
 
 
 @dataclasses.dataclass

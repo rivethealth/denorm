@@ -28,19 +28,13 @@
               "default": null,
               "description": "ID of dependency table.",
               "title": "Dependency",
-              "type": [
-                "string",
-                "null"
-              ]
+              "type": ["string", "null"]
             },
             "depJoin": {
               "default": null,
               "description": "SQL expression to join to dep.",
               "title": "join",
-              "type": [
-                "string",
-                "null"
-              ]
+              "type": ["string", "null"]
             },
             "name": {
               "description": "Name of table",
@@ -54,15 +48,10 @@
                 "type": "string"
               },
               "title": "key",
-              "type": [
-                "array",
-                "null"
-              ]
+              "type": ["array", "null"]
             }
           },
-          "required": [
-            "name"
-          ],
+          "required": ["name"],
           "type": "object"
         },
         {
@@ -76,10 +65,7 @@
                   "type": "string"
                 }
               },
-              "required": [
-                "dep",
-                "depJoin"
-              ],
+              "required": ["dep", "depJoin"],
               "type": "object"
             },
             {
@@ -88,9 +74,7 @@
                   "type": "array"
                 }
               },
-              "required": [
-                "targetKey"
-              ],
+              "required": ["targetKey"],
               "type": "object"
             }
           ]
@@ -107,10 +91,7 @@
             "type": "string"
           },
           "title": "Columns",
-          "type": [
-            "array",
-            "null"
-          ]
+          "type": ["array", "null"]
         },
         "key": {
           "description": "Key columns",
@@ -132,20 +113,14 @@
           "type": "string"
         }
       },
-      "required": [
-        "key",
-        "name"
-      ]
+      "required": ["key", "name"]
     }
   },
   "properties": {
     "consistency": {
       "default": "immedidate",
       "description": "Consistency level",
-      "enum": [
-        "deferred",
-        "immediate"
-      ],
+      "enum": ["deferred", "immediate"],
       "title": "Consistency",
       "type": "string"
     },
@@ -174,10 +149,7 @@
     "sync": {
       "default": "full",
       "description": "Synchronization mode. Full upserts and deletes records. Upsert only upserts records.",
-      "enum": [
-        "full",
-        "upsert"
-      ],
+      "enum": ["full", "upsert"],
       "title": "Synchronization",
       "type": "string"
     },
@@ -193,11 +165,7 @@
       "$ref": "#/definitions/target"
     }
   },
-  "required": [
-    "id",
-    "tables",
-    "target"
-  ],
+  "required": ["id", "tables", "target"],
   "title": "Join config",
   "type": "object"
 }

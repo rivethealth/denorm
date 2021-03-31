@@ -4,7 +4,8 @@ Procedures:
   - When consistency is deferred
 * ID__setup - Create the temporary tables
   - When consistency is deferred
-* ID__chg__SOURCE - Process changes
+* ID__chg1__SOURCE - Process changes
+* ID__chg2__SOURCE - Process changes
 
 Tables:
 * BASE (existing) - Table to watch
@@ -12,8 +13,7 @@ Tables:
   - Triggers
     * ID__del__SOURCE - Record deletes
     * ID__ins__SOURCE - Record inserts
-    * ID__upd1__SOURCE - Record updates
-    * ID__upd2__SOURCE - Record updates
+    * ID__upd__SOURCE - Record updates
 * TARGET (existing) - Table to populate
 * ID__iterate__SOURCE - Queue changes for iteration
   - When iteration is used
@@ -30,6 +30,7 @@ Temp tables:
 
 
 import dataclasses
+import enum
 import json
 import typing
 
@@ -57,6 +58,11 @@ from .string import indent
 class JoinIo:
     config: ResourceFactory[typing.TextIO]
     output: ResourceFactory[typing.TextIO]
+
+
+class _ChangeType(enum.Enum):
+    CHANGE_1 = enum.auto()
+    CHANGE_2 = enum.auto()
 
 
 def create_join(io: JoinIo):
@@ -103,34 +109,70 @@ def _statements(config: JoinConfig):
         refresh_table = None
 
     for id, table in config.tables.items():
-        change_function = config.sql_object(f"{config.id}__chg__{id}")
+        change_1_function = config.sql_object(f"{config.id}__chg1__{id}")
+        change_2_function = config.sql_object(f"{config.id}__chg2__{id}")
 
         dep_ids = recurse(id, lambda id: config.tables[id].dep)
         deps = [(id, config.tables[id]) for id in dep_ids]
 
-        yield from _create_change_function(
-            consistency=config.consistency,
-            setup=config.setup,
-            deps=deps,
-            function=change_function,
-            id=config.id,
-            key_table=key_table,
-            lock_table=lock_table,
-            query=config.query,
-            refresh_table=refresh_table,
-            setup_function=setup_function,
-            sync=config.sync,
-            table=table,
-            target=config.target,
-        )
+        for change_type in (_ChangeType.CHANGE_1, _ChangeType.CHANGE_2):
+            if change_type == _ChangeType.CHANGE_1:
+                change_function = change_1_function
+            elif change_type == _ChangeType.CHANGE_2:
+                change_function = change_2_function
+
+            yield from _create_change_function(
+                change_type=change_type,
+                consistency=config.consistency,
+                setup=config.setup,
+                deps=deps,
+                function=change_function,
+                id=config.id,
+                key_table=key_table,
+                lock_table=lock_table,
+                query=config.query,
+                refresh_table=refresh_table,
+                setup_function=setup_function,
+                sync=config.sync,
+                table=table,
+                target=config.target,
+            )
 
         yield from _create_change_triggers(
-            table_id=id, table=table, change_function=change_function, id=config.id
+            table_id=id,
+            table=table,
+            change_1_function=change_1_function,
+            change_2_function=change_2_function,
+            id=config.id,
         )
+
+
+def _key_query(
+    root: SqlObject,
+    deps: typing.Tuple[str, typing.List[JoinTable]],
+) -> str:
+    query = ""
+    for i, (dep_id, dep) in enumerate(reversed(deps)):
+        table_sql = root if i == len(deps) - 1 else dep.sql
+
+        if dep.target_key is not None:
+            dep_columns_sql = SqlList(
+                [SqlObject(dep_id, column) for column in dep.target_key]
+            )
+            query += f"SELECT DISTINCT {dep_columns_sql}"
+            query += f"\nFROM"
+            query += f"\n  {table_sql} AS {SqlIdentifier(dep_id)}"
+        else:
+            query += (
+                f"\n  JOIN {table_sql} AS {SqlIdentifier(dep_id)} ON {dep.dep_join}"
+            )
+
+    return query
 
 
 def _create_change_function(
     function: SqlObject,
+    change_type: _ChangeType,
     consistency: JoinConsistency,
     deps: typing.Tuple[str, typing.List[JoinTable]],
     id: str,
@@ -146,28 +188,30 @@ def _create_change_function(
 ):
     key_sql = SqlList([SqlIdentifier(column) for column in target.key])
 
-    key_query = ""
-    for i, (dep_id, dep) in enumerate(reversed(deps)):
-        table_sql = SqlObject("_change") if i == len(deps) - 1 else dep.sql
-
-        if dep.target_key is not None:
-            dep_columns_sql = SqlList(
-                [SqlObject(dep_id, column) for column in dep.target_key]
-            )
-            key_query += f"SELECT DISTINCT {dep_columns_sql}"
-            key_query += f"\nFROM"
-            key_query += f"\n  {table_sql} AS {SqlIdentifier(dep_id)}"
-        else:
-            key_query += (
-                f"\n  JOIN {table_sql} AS {SqlIdentifier(dep_id)} ON {dep.dep_join}"
-            )
-
     if setup is not None:
         before = f"PERFORM {setup.sql}();"
     else:
         before = ""
 
+    def parts(query: typing.Callable[[SqlObject], str]):
+        if change_type == _ChangeType.CHANGE_1:
+            return query(SqlObject("_change"))
+        elif change_type == _ChangeType.CHANGE_2:
+            return f"""
+{query(SqlObject("_old"))}
+
+{query(SqlObject("_new"))}
+""".strip()
+
     if consistency == JoinConsistency.DEFERRED:
+
+        def part(root: SqlObject):
+            return f"""
+INSERT INTO {key_table} ({key_sql})
+{_key_query(root, deps)}
+ON CONFLICT ({key_sql}) DO NOTHING;
+""".strip()
+
         yield f"""
 CREATE FUNCTION {function} () RETURNS trigger
 LANGUAGE plpgsql AS $$
@@ -175,9 +219,7 @@ LANGUAGE plpgsql AS $$
 {indent(before, 2)}
     PERFORM {setup_function}();
 
-    INSERT INTO {key_table} ({key_sql})
-{indent(key_query, 2)}
-    ON CONFLICT ({key_sql}) DO NOTHING;
+{indent(parts(part), 2)}
 
     INSERT INTO {refresh_table}
     SELECT
@@ -188,6 +230,17 @@ LANGUAGE plpgsql AS $$
 $$
 """.strip()
     elif query is not None:
+
+        def part(root: SqlObject):
+            return f"""
+INSERT INTO {lock_table} ({key_sql})
+{_key_query(root, deps)}
+ORDER BY {key_sql}
+ON CONFLICT ({key_sql}) DO UPDATE
+    SET {conflict_update(target.key)}
+    WHERE false;
+""".strip()
+
         update_sql = _update_sql(
             sync=sync, target=target, lock_table=lock_table, query=query
         )
@@ -199,15 +252,10 @@ LANGUAGE plpgsql AS $$
 {indent(before, 2)}
 
     -- lock keys
-    INSERT INTO {lock_table} ({key_sql})
-{indent(key_query, 2)}
-    ORDER BY {key_sql}
-    ON CONFLICT ({key_sql}) DO UPDATE
-        SET {conflict_update(target.key)}
-        WHERE false;
+{indent(parts(part), 2)}
 
     -- update
-{indent(update_sql, 1)}
+{indent(update_sql, 2)}
 
     -- clear locks
     DELETE FROM {lock_table};
@@ -217,17 +265,24 @@ LANGUAGE plpgsql AS $$
 $$
 """.strip()
     else:
+
+        def part(root: SqlObject):
+            return f"""
+INSERT INTO {target.sql} ({key_sql})
+{_key_query(root, deps)}
+    ORDER BY {key_sql}
+    ON CONFLICT ({key_sql}) DO UPDATE
+        SET {conflict_update(target.key)}
+        WHERE false;
+"""
+
         yield f"""
 CREATE FUNCTION {function} () RETURNS trigger
 LANGUAGE plpgsql AS $$
   BEGIN
 {indent(before, 2)}
-    INSERT INTO {target.sql} ({key_sql})
-{indent(key_query, 2)}
-    ORDER BY {key_sql}
-    ON CONFLICT ({key_sql}) DO UPDATE
-        SET {conflict_update(target.key)}
-        WHERE false;
+
+{indent(parts(part), 2)}
 
     RETURN NULL;
   END;
@@ -236,35 +291,32 @@ $$
 
 
 def _create_change_triggers(
-    table_id: str, table: JoinTable, change_function: SqlObject, id: str
+    table_id: str,
+    table: JoinTable,
+    change_1_function: SqlObject,
+    change_2_function: SqlObject,
+    id: str,
 ):
     delete_trigger = SqlIdentifier(f"{id}__del__{table_id}")
     insert_trigger = SqlIdentifier(f"{id}__ins__{table_id}")
-    update_old_trigger = SqlIdentifier(f"{id}__upd1__{table_id}")
-    update_new_trigger = SqlIdentifier(f"{id}__upd2__{table_id}")
+    update_trigger = SqlIdentifier(f"{id}__upd__{table_id}")
 
     yield f"""
 CREATE TRIGGER {delete_trigger} AFTER DELETE ON {table.sql}
 REFERENCING OLD TABLE AS _change
-FOR EACH STATEMENT EXECUTE PROCEDURE {change_function}()
+FOR EACH STATEMENT EXECUTE PROCEDURE {change_1_function}()
 """.strip()
 
     yield f"""
 CREATE TRIGGER {insert_trigger} AFTER INSERT ON {table.sql}
 REFERENCING NEW TABLE AS _change
-FOR EACH STATEMENT EXECUTE PROCEDURE {change_function}()
+FOR EACH STATEMENT EXECUTE PROCEDURE {change_1_function}()
 """.strip()
 
     yield f"""
-CREATE TRIGGER {update_old_trigger} AFTER UPDATE ON {table.sql}
-REFERENCING OLD TABLE AS _change
-FOR EACH STATEMENT EXECUTE PROCEDURE {change_function}()
-""".strip()
-
-    yield f"""
-CREATE TRIGGER {update_new_trigger} AFTER UPDATE ON {table.sql}
-REFERENCING NEW TABLE AS _change
-FOR EACH STATEMENT EXECUTE PROCEDURE {change_function}()
+CREATE TRIGGER {update_trigger} AFTER UPDATE ON {table.sql}
+REFERENCING OLD TABLE AS _old NEW TABLE AS _new
+FOR EACH STATEMENT EXECUTE PROCEDURE {change_2_function}()
 """.strip()
 
 
