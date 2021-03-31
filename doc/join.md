@@ -1,5 +1,119 @@
 # Join
 
+## Example
+
+For a full working example, see [Join example](join-example.md).
+
+Consider a database of books
+
+<details>
+<summary>DDL</summary>
+
+```sql
+CREATE TABLE author (
+  id int PRIMARY KEY,
+  name text NOT NULL
+);
+
+CREATE TABLE book (
+  id int PRIMARY KEY,
+  title text NOT NULL
+);
+
+CREATE TABLE book_author (
+  id int PRIMARY KEY,
+  book_id int NOT NULL REFERENCES book (id) ON DELETE CASCADE,
+  author_id int NOT NULL REFERENCES author (id) ON DELETE CASCADE,
+  ordinal int NOT NULL,
+  UNIQUE (book_id, author_id),
+  UNIQUE (book_id, ordinal)
+);
+```
+
+</details>
+
+Suppose we needed a denormalized `book_full` table, defined by the following
+query.
+
+<details>
+<summary>DDL</summary>
+
+```sql
+CREATE TABLE book_full (
+  id int PRIMARY KEY,
+  title text NOT NULL,
+  author_names text[] NOT NULL
+);
+```
+
+```sql
+SELECT
+  b.id,
+  b.title,
+  a.names
+FROM
+  $1 AS k (id)
+  JOIN book AS b ON k.id = b.id
+  CROSS JOIN LATERAL (
+    SELECT coalesce(array_agg(a.name ORDER BY ba.ordinal), '{}') AS names
+    FROM
+      author AS a
+      JOIN book_author AS ba ON a.id = ba.author_id
+    WHERE b.id = ba.book_id
+  ) AS a
+```
+
+The `$1` placeholder is a recordset of `book_full` primary keys. </details>
+
+Define the relationships between the source tables of the query
+
+<details>
+<summary>Config</summary>
+
+```yml
+id: book_full
+schema: public
+tables:
+  author:
+    dep: book_author
+    depJoin: author.id = book_author.author_id
+    name: book_author
+    schema: public
+  book:
+    name: book
+    schema: public
+    targetKey: [id]
+  book_author:
+    dep: book
+    depJoin: book_author.book_id = book.id
+    name: book_author
+    schema: public
+target:
+  columns: [id, title, author_names]
+  key: [id]
+  name: book_full
+  schema: public
+query: >
+  SELECT
+    b.id,
+    b.title,
+    a.names
+  FROM
+    \$1 AS k (id)
+    JOIN book AS b ON k.id = b.id
+    CROSS JOIN LATERAL (
+      SELECT coalesce(array_agg(a.name ORDER BY ba.ordinal), '{}') AS names
+      FROM
+        author AS a
+        JOIN book_author AS ba ON a.id = ba.author_id
+      WHERE b.id = ba.book_id
+    ) AS a
+```
+</details>
+
+Use Denorm to generate the functions and triggers that keep `book_full`
+up-to-date to with its constituent tables.
+
 ## Schema
 
 See the JSONSchema ([JSON](../denorm/formats/join.json)
@@ -175,7 +289,3 @@ change is stuck until then.
 ### Limitations
 
 This option is only valid on single-table sources.
-
-## Example
-
-For a full working example, see [Join example](join-example.md).
