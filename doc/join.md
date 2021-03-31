@@ -1,118 +1,28 @@
 # Join
 
+## Overview
+
+The steps are:
+
+1. Create a target table that will hold the denormalized data.
+
+2. Compose a query that will populate that table. Include a placeholder `$1` for
+   the recordset of primary keys.
+
+3. Author a JSON file describing the relationships between the underlying tables
+   of the query.
+
+4. Run the `denorm create-join` command to generate SQL DDL for triggers and
+   functions.
+
+5. Apply generated SQL to the database.
+
+Now the target table will be kept up-to-date whenever the relevant tables
+change.
+
 ## Example
 
 For a full working example, see [Join example](join-example.md).
-
-Consider a database of books
-
-<details>
-<summary>DDL</summary>
-
-```sql
-CREATE TABLE author (
-  id int PRIMARY KEY,
-  name text NOT NULL
-);
-
-CREATE TABLE book (
-  id int PRIMARY KEY,
-  title text NOT NULL
-);
-
-CREATE TABLE book_author (
-  id int PRIMARY KEY,
-  book_id int NOT NULL REFERENCES book (id) ON DELETE CASCADE,
-  author_id int NOT NULL REFERENCES author (id) ON DELETE CASCADE,
-  ordinal int NOT NULL,
-  UNIQUE (book_id, author_id),
-  UNIQUE (book_id, ordinal)
-);
-```
-
-</details>
-
-Suppose we needed a denormalized `book_full` table, defined by the following
-query.
-
-<details>
-<summary>DDL</summary>
-
-```sql
-CREATE TABLE book_full (
-  id int PRIMARY KEY,
-  title text NOT NULL,
-  author_names text[] NOT NULL
-);
-```
-
-```sql
-SELECT
-  b.id,
-  b.title,
-  a.names
-FROM
-  $1 AS k (id)
-  JOIN book AS b ON k.id = b.id
-  CROSS JOIN LATERAL (
-    SELECT coalesce(array_agg(a.name ORDER BY ba.ordinal), '{}') AS names
-    FROM
-      author AS a
-      JOIN book_author AS ba ON a.id = ba.author_id
-    WHERE b.id = ba.book_id
-  ) AS a
-```
-
-The `$1` placeholder is a recordset of `book_full` primary keys. </details>
-
-Define the relationships between the source tables of the query
-
-<details>
-<summary>Config</summary>
-
-```yml
-id: book_full
-schema: public
-tables:
-  author:
-    dep: book_author
-    depJoin: author.id = book_author.author_id
-    name: book_author
-    schema: public
-  book:
-    name: book
-    schema: public
-    targetKey: [id]
-  book_author:
-    dep: book
-    depJoin: book_author.book_id = book.id
-    name: book_author
-    schema: public
-target:
-  columns: [id, title, author_names]
-  key: [id]
-  name: book_full
-  schema: public
-query: >
-  SELECT
-    b.id,
-    b.title,
-    a.names
-  FROM
-    \$1 AS k (id)
-    JOIN book AS b ON k.id = b.id
-    CROSS JOIN LATERAL (
-      SELECT coalesce(array_agg(a.name ORDER BY ba.ordinal), '{}') AS names
-      FROM
-        author AS a
-        JOIN book_author AS ba ON a.id = ba.author_id
-      WHERE b.id = ba.book_id
-    ) AS a
-```
-</details>
-
-Use Denorm to generate the functions and triggers that keep `book_full`
-up-to-date to with its constituent tables.
 
 ## Schema
 
@@ -131,91 +41,90 @@ created in the default schema.
 The target table must have a primary key. It may have columns not populated by
 the query.
 
-## Sources
+## Tables
 
-The purposes of `sources` is to calculate the primary keys of the target that
-needed to be refreshed (inserted, updated, deleted).
+Tables are the source tables from which changes will be propogated.
 
-Each sources `sources` item has:
+If the primary key of the target is known from the table,
 
-- id - Identifier of this source
-- tables - List of tables and columns. Columns are any columns used in
-  `expression`, `identity`, or `join`.
-- expression - From expression, using $1, $2, etc as the placeholders for
-  tables. Alias the tables to provide a consistent name that can be referenced
-  elsewhere.
+- targetKey - List of expressions for primary key of target table
 
-If this source has the primary key,
-
-- identity - Expression for primary key of target table
-
-Otherwise, if additional tables need to be referenced to find the primary key,
+Otherwise, it must reference another table,
 
 - dep - Identifier of the source to reference.
-- join - Expression for an inner join on the two sources.
-
-Usually, each source has a single table, though denorm supports other cases, for
-example a cartesian product of two tables.
-
-## Refresh
-
-- id
-- expression
-- identity
-- iterator
+- depJoin - Expression for an inner join on the two sources.
 
 ## Constistency
 
-_TODO: not yet implemented_
+There are two consistency modes.
 
-There are two supported consistency modes.
+### Immediate
 
-### transaction
+The target is updated at the end of the statement.
 
-This is the default. The target table is updated at the end of the transaction,
-via a constraint trigger.
+### Deferred
 
-Deferring work until the end of a transaction is particularly useful for
-avoiding excess work for "nested" records (insert a record and its children and
-grandchildren all in the same transaction).
+The target is updated at the end of the transaction.
 
-### iterate
+Deferring work involves overhead. It is useful for avoiding excess querying when
+related data is modified multiple times. For example, when multiple levels of
+records are updated (insert a record and its children and grandchildren all in
+the same transaction).
 
-Some tables may have a 1:N relationship with a very large N, say tens of
-thousands.
+## Dependency mode
 
-In such cases, it may not be feasible to update the denormalized table in a
-single transaction. Instead, denorm allows the update to be broken up over
-multiple transactions.
+### Sync
 
-For example, an author may have many books. (This particular example is
-contrived, as in fact as an individual author will not have thousands of books,
-so in this case it would really be preferrable to use the simpler transaction
-consistency mode.)
+Join to all dependency records.
 
-Add `partition` and `iterator` expressions.
+### Async
 
-- partition - each iteration scope
-- iterator - iteration key
+If tables have an 1:N relationship with a very large N, say tens of thousands,
+it may not be feasible to process all records a single transaction. Denorm
+allows the join to be broken up over multiple transactions.
+
+Both the table and the dependency table must have a defined unique key. The
+dependency table must have an btree index that covers the foreign key and its
+own unique key.
+
+Building on the book example, suppose each book had a genre, and the genre's
+name is to be included in the target table. A genre may have hundreds of
+thousands of books, so we'll chunk updates to `genre` by iterating through
+`book` records by `id`.
 
 <details>
 <summary>book_full.yml</summary>
 
 ```yml
-- id: author
-  tables: [{ schema: public, table: author, columns: ["id"] }]
-  expression: $1 AS author
-  dep: book_author
-  join: author.id = book_author.author_id
-  partition: author.id
-  iterator: book_author.id
+tables:
+  author:
+    dep: book_author
+    depJoin: author.id = book_author.author_id
+    name: book_author
+    schema: public
+  book:
+    key: [id]
+    name: book
+    schema: public
+    targetKey: [id]
+  book_author:
+    dep: book
+    depJoin: book_author.book_id = book.id
+    name: book_author
+    schema: public
+  genre:
+    dep: book
+    depJoin: book.genre_id = genre.id
+    depMode: iterate
+    name: genre
+    schema: public
 ```
 
 </details>
 
-Now, each occurrence of a changed `author.id` will iterate by `book_author.id`.
+Note that for performance, `book` must have an index on `genre_id, id`.
 
-### Worker
+#### Worker
 
 Updates will not automatically affect the target table. Instead, changes are
 queued and must be processed seperately by a worker.
@@ -231,25 +140,27 @@ deadlocking.)
 -- Find an incomplete author change and refresh the target for up to 1000 corresponding
 -- book_author records.
 -- Return whether additional processing remains to be done.
-CALL book_full__process__author(1000);
+CALL book_full__process__genre(1000);
 ```
 
 <details>
 <summary>Functions may be called individually for additional control.</summary>
 
+Run the begin function to find and lock a record that requires work.
+
 ```sql
 -- Find and lock an incomplete author change.
-SELECT book_full__lock__author();
+SELECT book_full__beg__genre();
 ```
 
 If this returns a non-null bigint, there is work available. Run a transaction
-with that value.
+and pass that value to the update function.
 
 ```sql
 BEGIN
 -- Refresh the target for up to 1000 corresponding book_author records.
 -- Return whether additional processing remains to be done.
-SELECT book_full__update__author($1, 1000);
+SELECT book_full__upd__genre($1, 1000);
 COMMIT
 ```
 
@@ -257,25 +168,13 @@ Release the lock.
 
 ```sql
 -- Unlock the author change.
-SELECT book_full__unlock__author($1)
+SELECT book_full__end__genre($1)
 ```
 
 </details>
 
 This function should be called periodically. Additionally workers can listen to
-the `public.book_full__change__author` listener.
-
-### Performance
-
-In order to work efficiently, the foreign table must have an index on its
-foreign and primary keys, in that order.
-
-To iteratively process `author`, the following index is required on
-`book_author`:
-
-```sql
-CREATE INDEX ON book_author (author_id, id);
-```
+the `public.book_full__change__genre` listener.
 
 ### Errors
 

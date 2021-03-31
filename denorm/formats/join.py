@@ -13,6 +13,11 @@ class JoinConsistency(enum.Enum):
     IMMEDIATE = "immediate"
 
 
+class JoinDepMode(enum.Enum):
+    ASYNC = "async"
+    SYNC = "sync"
+
+
 class JoinSync(enum.Enum):
     FULL = "full"
     UPSERT = "upsert"
@@ -47,6 +52,8 @@ class JoinTable:
     name: str
     dep: typing.Optional[str] = None
     dep_join: typing.Optional[str] = None
+    dep_mode: JoinDepMode = JoinDepMode.SYNC
+    key: typing.Optional[typing.List[str]] = None
     schema: typing.Optional[str] = None
     target_key: typing.Optional[typing.List[str]] = None
 

@@ -25,9 +25,21 @@ definitions:
             type: [string, "null"]
           depJoin:
             default: null
-            description: SQL expression to join to dep.
-            title: join
+            description: SQL expression to join to dependency.
+            title: Dependency join
             type: [string, "null"]
+          depMode:
+            default: sync
+            description: Mode of dependency join.
+            enum: [async, sync]
+            title: Dependency mode
+            type: string
+          key:
+            default: null
+            description: Unique key.
+            items: { type: string }
+            title: key
+            type: array
           name:
             description: Name of table
             title: Name
