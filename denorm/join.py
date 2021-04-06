@@ -39,11 +39,11 @@ from .formats.join import (
     JoinConsistency,
     JoinDepMode,
 )
+from .join_async import create_queue
 from .join_change import create_change
 from .join_common import Structure
 from .join_defer import create_refresh_function, create_setup_function
 from .join_query import ProcessQuery, create_lock_table
-from .join_queue import create_queue
 from .resource import ResourceFactory
 from .string import indent
 
@@ -82,7 +82,7 @@ def _statements(config: JoinConfig):
             target=config.target,
         )
 
-    for id, table in config.tables.items():
+    for table_id, table in config.tables.items():
         if table.dep_mode != JoinDepMode.ASYNC:
             continue
 
@@ -98,20 +98,21 @@ def _statements(config: JoinConfig):
         )
 
         yield from create_queue(
+            id=config.id,
             process_query=process_query,
             structure=structure,
-            table_id=id,
+            table_id=table_id,
             tables=config.tables,
         )
 
-    for id, table in config.tables.items():
+    for table_id, table in config.tables.items():
         process_query = ProcessQuery(
             consistency=config.consistency,
             query=config.query,
             setup=config.setup,
             structure=structure,
             sync=config.sync,
-            table_id=id,
+            table_id=table_id,
             tables=config.tables,
             target=config.target,
         )
@@ -121,5 +122,5 @@ def _statements(config: JoinConfig):
             process_query=process_query,
             structure=structure,
             table=table.sql,
-            table_id=id,
+            table_id=table_id,
         )

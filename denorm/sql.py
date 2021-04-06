@@ -170,7 +170,9 @@ class SqlTableExpression:
 @dataclasses.dataclass
 class SqlQuery:
     query: str
-    expressions: typing.List[SqlTableExpression] = dataclasses.field(default_factory=list)
+    expressions: typing.List[SqlTableExpression] = dataclasses.field(
+        default_factory=list
+    )
 
     def append(self, id: SqlId, query: str):
         self.expressions.append(SqlTableExpression(id, self.query))

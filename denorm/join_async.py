@@ -10,7 +10,6 @@ from .sql import (
     SqlObject,
     SqlString,
     SqlTableExpression,
-    table_fields,
     sql_list,
     table_fields,
 )
@@ -18,6 +17,7 @@ from .string import indent
 
 
 def create_queue(
+    id: str,
     table_id: str,
     structure: Structure,
     process_query: ProcessQuery,
@@ -29,8 +29,8 @@ def create_queue(
     if table.lock_id is not None:
         lock_id = table.lock_id
     else:
-        digest = hashlib.md5(table_id.encode("utf-8")).digest()
-        lock_id = int.from_bytes(digest[0:2], "big") // 2
+        digest = hashlib.md5(f"{id}__{table_id}".encode("utf-8")).digest()
+        lock_id = int.from_bytes(digest[0:2], "big", signed=True)
     lock_base = lock_id * (2 ** 48)
 
     queue_table = structure.queue_table(table_id)

@@ -46,7 +46,7 @@ class Structure:
         return self._sql_object(self._name(f"pcs__{table_id}"))
 
     def queue_refresh_function(self, table_id: str) -> SqlObject:
-        return self._sql_object(self._name(f"ref__{table_id}"))
+        return self._sql_object(self._name(f"rfs__{table_id}"))
 
     def queue_end_function(self, table_id: str) -> SqlObject:
         return self._sql_object(self._name(f"end__{table_id}"))

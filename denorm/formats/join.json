@@ -45,7 +45,11 @@
             },
             "lockId": {
               "default": null,
-              "type": "integer"
+              "description": "Advisory lock space to use for queueing. If null, it is generated from the ID and table ID.",
+              "maximum": 32677,
+              "minimum": -32678,
+              "title": "Lock ID",
+              "type": ["integer", "null"]
             },
             "key": {
               "default": null,

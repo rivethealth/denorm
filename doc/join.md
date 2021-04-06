@@ -75,7 +75,7 @@ the same transaction).
 
 ### Sync
 
-Join to all dependency records.
+Join to all dependency records in the current transaction.
 
 ### Async
 
@@ -131,10 +131,6 @@ queued and must be processed seperately by a worker.
 
 The queue uses
 [advistory locks.](https://www.postgresql.org/docs/12/explicit-locking.html#ADVISORY-LOCKS)
-Choose a 52-bit space for locks with `--advisory-lock <num>` where `<num>` is an
-integer from 0 to 65535. The lower end of the range is num\*2^52 By default, 0
-is used. (If advisory locks overlap, there can be undue lock contention and
-deadlocking.)
 
 ```sql
 -- Find an incomplete author change and refresh the target for up to 1000 corresponding
