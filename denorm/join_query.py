@@ -15,7 +15,9 @@ from .sql import (
     SqlId,
     SqlNumber,
     SqlObject,
+    SqlQuery,
     SqlString,
+    SqlTableExpression,
     sql_list,
     table_fields,
     update_excluded,
@@ -81,14 +83,14 @@ class ProcessQuery:
             structure=self._structure,
         )
 
-    def gather_query(self, root: str):
+    def gather(self, root: str):
         _, last_table = self._deps[0]
         if last_table.dep is not None:
             foreign = self._tables[last_table.dep]
         else:
             foreign = None
 
-        return _gather_query(
+        return _gather(
             consistency=self._consistency,
             deps=self._deps,
             foreign=foreign,
@@ -135,7 +137,7 @@ PERFORM {structure.setup_function()}();
     """.strip()
 
 
-def _gather_query(
+def _gather(
     consistency: JoinConsistency,
     deps: typing.List[typing.Tuple[str, JoinTable]],
     foreign: typing.Optional[JoinTable],
@@ -144,7 +146,7 @@ def _gather_query(
     structure: Structure,
     sync: JoinSync,
     target: JoinTarget,
-):
+) -> SqlQuery:
     key_query = ""
     for i, (dep_id, dep) in enumerate(reversed(deps)):
         table_sql = root if i == len(deps) - 1 else str(dep.sql)
@@ -157,7 +159,7 @@ def _gather_query(
             key_query += f"\nFROM"
             key_query += f"\n  {table_sql} AS {SqlId(dep_id)}"
         elif dep.dep_mode == JoinDepMode.ASYNC:
-            dep_columns = sql_list(SqlId(column) for column in dep.key)
+            dep_columns = [SqlId(column) for column in dep.key]
             key_query += f"SELECT DISTINCT {table_fields(SqlId(dep_id), dep_columns)}"
             key_query += f"\nFROM"
             key_query += f"\n  {table_sql} AS {SqlId(dep_id)}"
@@ -170,15 +172,17 @@ def _gather_query(
 
         local_columns = [local_column(column) for column in last_table.key]
 
-        return f"""
+        queue_query = f"""
 INSERT INTO {queue_table} ({sql_list(local_columns)})
 {key_query}
 ORDER BY {sql_list(SqlNumber(i + 1) for i, _ in enumerate(last_table.key))}
 ON CONFLICT ({sql_list(local_columns)}) DO UPDATE
   SET {update_excluded(foreign_column(column) for column in foreign.key)},
-    seq = excluded.seq
+    seq = excluded.seq,
     tries = excluded.tries
         """.strip()
+
+        return SqlQuery(queue_query)
     elif consistency == JoinConsistency.DEFERRED:
         return upsert_query(
             columns=target.key,
@@ -199,25 +203,22 @@ ON CONFLICT ({sql_list(local_columns)}) DO UPDATE
             target=target.sql,
         )
     else:
-        expressions = f"""
-_key AS (
-{indent(key_query, 2)}
-)
-        """.strip()
+        key_table = SqlId("_key")
 
         if query is not None:
-            query = format(query, "_key")
+            query = format(query, str(key_table))
         else:
-            query = "TABLE _key"
+            query = f"TABLE {key_table}"
 
-        return sync_query(
+        result = sync_query(
             columns=target.columns or target.key,
-            expressions=expressions,
             key=target.key,
-            key_table=SqlId("_key"),
+            key_table=key_table,
             query=query,
             target=target.sql,
         )
+        result.prepend(SqlTableExpression(key_table, key_query))
+        return result
 
 
 def _finalize(
@@ -227,12 +228,12 @@ def _finalize(
     structure: Structure,
     sync: JoinSync,
     target: JoinTarget,
-):
+) -> str:
     last_id, last_table = deps[-1]
     if last_table.dep_mode == JoinDepMode.ASYNC:
         queue_table = structure.queue_table(last_id)
         return f"""
-NOTIFY {SqlString(queue_table)};
+NOTIFY {SqlId(str(queue_table))};
         """.strip()
 
     if consistency == JoinConsistency.DEFERRED:
@@ -250,7 +251,7 @@ WHERE NOT EXISTS (TABLE {refresh_table});
     query = format(query, str(lock_table))
 
     if sync == JoinSync.FULL:
-        update_sql = sync_query(
+        update_query = sync_query(
             columns=target.columns or target.key,
             key=target.key,
             key_table=lock_table,
@@ -258,7 +259,7 @@ WHERE NOT EXISTS (TABLE {refresh_table});
             target=target.sql,
         )
     else:
-        update_sql = upsert_query(
+        update_query = upsert_query(
             columns=target.columns or target.key,
             key=target.key,
             query=query,
@@ -267,7 +268,7 @@ WHERE NOT EXISTS (TABLE {refresh_table});
 
     return f"""
 -- synchronize
-{update_sql};
+{str(update_query)};
 
 -- clear locks
 DELETE FROM {lock_table};

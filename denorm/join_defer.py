@@ -25,7 +25,7 @@ def create_refresh_function(
     )
 
     if sync == JoinSync.FULL:
-        update_sql = sync_query(
+        update_query = sync_query(
             columns=target.columns or target.key,
             key=target.key,
             key_table=lock_table,
@@ -33,7 +33,7 @@ def create_refresh_function(
             target=target.sql,
         )
     elif sync == JoinSync.UPSERT:
-        update_sql = upsert_query(
+        update_query = upsert_query(
             columns=target.columns or target.key,
             key=target.key,
             query=query,
@@ -59,7 +59,7 @@ LANGUAGE plpgsql AS $$
         WHERE false;
 
     -- update
-{indent(update_sql, 2)};
+{indent(str(update_query), 2)};
 
     -- clear locks
     DELETE FROM {lock_table};

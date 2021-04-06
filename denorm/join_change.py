@@ -77,7 +77,7 @@ LANGUAGE plpgsql AS $$
   BEGIN
 {indent(process_query.prepare(), 2)}
 
-{indent(process_query.gather_query(root), 2)};
+{indent(str(process_query.gather(root)), 2)};
 
 {indent(process_query.finalize(), 2)}
 

@@ -93,7 +93,7 @@ def _statements(config: JoinConfig):
             consistency=config.consistency,
             target=config.target,
             setup=config.setup,
-            table_id=id,
+            table_id=table.dep,
             query=config.query,
         )
 
