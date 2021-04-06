@@ -61,7 +61,7 @@ tables:
   book:
     name: book
     schema: public
-    targetKey: [id]
+    targetKey: [book.id]
   book_author:
     dep: book
     depJoin: book_author.book_id = book.id

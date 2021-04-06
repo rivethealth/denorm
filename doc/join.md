@@ -140,7 +140,7 @@ deadlocking.)
 -- Find an incomplete author change and refresh the target for up to 1000 corresponding
 -- book_author records.
 -- Return whether additional processing remains to be done.
-CALL book_full__process__genre(1000);
+CALL book_full__pcs__genre(1000);
 ```
 
 <details>
@@ -160,7 +160,7 @@ and pass that value to the update function.
 BEGIN
 -- Refresh the target for up to 1000 corresponding book_author records.
 -- Return whether additional processing remains to be done.
-SELECT book_full__upd__genre($1, 1000);
+SELECT book_full__rfs__genre($1, 1000);
 COMMIT
 ```
 
@@ -174,7 +174,7 @@ SELECT book_full__end__genre($1)
 </details>
 
 This function should be called periodically. Additionally workers can listen to
-the `public.book_full__change__genre` listener.
+the `public.book_full__chg__genre` listener.
 
 ### Errors
 

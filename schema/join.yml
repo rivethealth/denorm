@@ -34,6 +34,9 @@ definitions:
             enum: [async, sync]
             title: Dependency mode
             type: string
+          lockId:
+            default: null
+            type: integer
           key:
             default: null
             description: Unique key.

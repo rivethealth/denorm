@@ -113,7 +113,7 @@ _IDENTIFIER_PATTERN = re.compile(r"^[a-zA-Z_][a-zA-Z0-9$_]*$")
 
 
 @dataclasses.dataclass
-class SqlIdentifier:
+class SqlId:
     name: str
 
     def __str__(self) -> str:
@@ -126,7 +126,15 @@ class SqlIdentifier:
 
 
 @dataclasses.dataclass
-class SqlLiteral:
+class SqlNumber:
+    value: int
+
+    def __str__(self) -> str:
+        return str(self.value)
+
+
+@dataclasses.dataclass
+class SqlString:
     value: str
 
     def __str__(self) -> str:
@@ -142,19 +150,20 @@ class SqlObject:
         self.names = args
 
     def __str__(self) -> str:
-        return ".".join(str(SqlIdentifier(name)) for name in self.names)
+        return ".".join(str(name) for name in self.names)
 
 
-@dataclasses.dataclass
-class SqlList:
-    parts: typing.List
-
-    def __str__(self) -> str:
-        return ", ".join(str(part) for part in self.parts)
+def update_excluded(columns: typing.Iterable[SqlId]):
+    return sql_list(f"{column} = excluded.{column}" for column in columns)
 
 
-def conflict_update(columns: typing.List[str]) -> str:
-    return ", ".join(
-        f"{SqlIdentifier(column)} = excluded.{SqlIdentifier(column)}"
-        for column in columns
-    )
+def composite_fields(id: SqlId, columns: typing.List[SqlId]):
+    return sql_list(str(SqlObject(id, column)) for column in columns)
+
+
+def table_fields(id: SqlId, columns: typing.List[SqlId]):
+    return sql_list(str(SqlObject(id, column)) for column in columns)
+
+
+def sql_list(items: typing.Iterable):
+    return ", ".join(str(item) for item in items)

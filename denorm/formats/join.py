@@ -5,7 +5,7 @@ import typing
 import dataclasses_json
 
 from ..json import DataJsonFormat, ValidatingDataJsonFormat, package_json_format
-from ..sql import SqlObject
+from ..sql import SqlId, SqlObject
 
 
 class JoinConsistency(enum.Enum):
@@ -37,9 +37,9 @@ class JoinTarget:
     @property
     def sql(self) -> SqlObject:
         return (
-            SqlObject(self.schema, self.name)
+            SqlObject(SqlId(self.schema), SqlId(self.name))
             if self.schema is not None
-            else SqlObject(self.name)
+            else SqlObject(SqlId(self.name))
         )
 
 
@@ -54,6 +54,7 @@ class JoinTable:
     dep_join: typing.Optional[str] = None
     dep_mode: JoinDepMode = JoinDepMode.SYNC
     key: typing.Optional[typing.List[str]] = None
+    lock_id: typing.Optional[int] = None
     schema: typing.Optional[str] = None
     target_key: typing.Optional[typing.List[str]] = None
 
@@ -66,9 +67,9 @@ class JoinTable:
     @property
     def sql(self) -> SqlObject:
         return (
-            SqlObject(self.schema, self.name)
+            SqlObject(SqlId(self.schema), SqlId(self.name))
             if self.schema is not None
-            else SqlObject(self.name)
+            else SqlObject(SqlId(self.name))
         )
 
 
@@ -84,9 +85,9 @@ class JoinHook:
     @property
     def sql(self) -> SqlObject:
         return (
-            SqlObject(self.schema, self.name)
+            SqlObject(SqlId(self.schema), SqlId(self.name))
             if self.schema is not None
-            else SqlObject(self.name)
+            else SqlObject(SqlId(self.name))
         )
 
 
@@ -104,11 +105,6 @@ class JoinConfig:
     schema: typing.Optional[str] = None
     setup: typing.Optional[JoinHook] = None
     sync: JoinSync = JoinSync.FULL
-
-    def sql_object(self, name):
-        return (
-            SqlObject(self.schema, name) if self.schema is not None else SqlObject(name)
-        )
 
 
 class JoinInvalid(Exception):
