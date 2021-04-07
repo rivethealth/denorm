@@ -27,6 +27,9 @@ setuptools.setup(
         ]
     },
     extras_require={"dev": ["black", "pytest-env", "isort", "pytest"]},
+    package_data={
+        "denorm.formats": ["*.json"],
+    },
     install_requires=["dataclasses-json", "jsonschema"],
     long_description=long_description,
     long_description_content_type="text/markdown",

@@ -38,9 +38,11 @@ The grouping key of the aggregate.
 
 ## Aggregates
 
-Each aggregate defines it's value, using the variable `sign` to determine the sign of operation, e.g. `sign * count(*)`.
+Each aggregate defines it's value, using the variable `sign` to determine the
+sign of operation, e.g. `sign * count(*)`.
 
-It also defines a scalar combining expression, e.g. `existing.example = excluded.example`.
+It also defines a scalar combining expression, e.g.
+`existing.example = excluded.example`.
 
 ## Filter
 
