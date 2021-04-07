@@ -1,100 +1,50 @@
-# Agg
+# Join
+
+Aggregate a single table.
+
+## Steps
+
+1. Create a target table that will hold the aggregated data.
+
+2. Create expressions for the groups and aggregtes.
+
+3. Author a JSON file describing the groups and aggregates.
+
+4. Run the `denorm create-agg` command to generate SQL DDL for triggers and
+   functions.
+
+5. Apply generated SQL to the database.
+
+Now the target table will be kept up-to-date whenever the relevant tables
+change.
 
 ## Example
 
-Suppose you have a database of books.
+For a full working example, see [Aggregate example](agg-example.md).
 
-```sql
-CREATE TABLE author (
-  id int PRIMARY KEY,
-  name text NOT NULL
-);
+## Schema
 
-CREATE TABLE book (
-  id int PRIMARY KEY,
-  title text NOT NULL
-);
+See the JSONSchema ([JSON](../denorm/formats/agg.json)
+[YAML](../schema/agg.yml)) for documentation of full options.
 
-CREATE TABLE book_author (
-  id int PRIMARY KEY,
-  book_id int NOT NULL REFERENCES book (id) ON DELETE CASCADE,
-  author_id int NOT NULL REFERENCES author (id) ON DELETE CASCADE,
-  ordinal int NOT NULL,
-  UNIQUE (book_id, author_id),
-  UNIQUE (book_id, ordinal)
-);
-```
+## Generated objects
 
-Suppose you need a rollup table for number of books written for each author.
+ID is used to name database objects.
 
-This could be done using a "denormalized" view like above, but a more efficient
-method is to use dedicated aggregation.
+Database objects are created in the schema if given. Otherwise they will be
+created in the default schema.
 
-```sql
-CREATE TABLE author_book_stat (
-  author_id int PRIMARY KEY,
-  book_count int NOT NULL
-);
-```
+## Constistency
 
-Author a query that proceduces the aggregation.
+There are two consistency modes.
 
-```sql
-SELECT author_id, count(*)
-FROM $1
-GROUP BY 1
-```
+### Immediate
 
-Create a YAML file
+The target is updated at the end of the statement.
 
-```yml
-id: author_book_stat
-schema: public
-target:
-  table: author_book_stat
-  count: book_count
-base:
-  table: book_author
-reduce: >
-  count = $1.count + excluded.count
-query: >
-  SELECT author_id, count(*) FROM $1 GROUP BY 1
-```
+### Deferred
 
-Run denorm and execute the DDL statemenets.
+The target is updated at the end of the transaction.
 
-```sh
-denorm create_agg author_book_stat.yml | psql
-```
-
-Now test
-
-<details>
-<summary>Data</summary>
-
-```sql
-INSERT INTO author (id, name)
-VALUES
-  (1, 'Neil Gaiman'),
-  (2, 'Terry Pratchett');
-
-INSERT INTO book (id, title)
-VALUES
-  (1, 'Good Omens'),
-  (2, 'The Color of Magic');
-
-INSERT INTO book_author (id, book_id, author_id, ordinal)
-VALUES
-  (1, 1, 1, 1),
-  (2, 1, 2, 2),
-  (3, 2, 2, 1);
-
-```
-
-</details>
-
-View results:
-
-```sql
-TABLE author_book_stat
-```
+Deferring work involves overhead. It is useful for avoiding lock contention on
+the target table.

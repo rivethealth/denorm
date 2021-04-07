@@ -19,6 +19,7 @@ def create_refresh_function(
     key_table = structure.key_table()
     lock_table = structure.lock_table()
     refresh_function = structure.refresh_function()
+    refresh_table = structure.refresh_table()
 
     query = (
         format(query, str(lock_table)) if query is not None else f"TABLE {lock_table}"
@@ -44,6 +45,8 @@ def create_refresh_function(
 CREATE FUNCTION {refresh_function} () RETURNS trigger
 LANGUAGE plpgsql AS $$
   BEGIN
+    DELETE FROM {refresh_table};
+
     -- lock keys
     WITH
         _change AS (
@@ -101,7 +104,7 @@ LANGUAGE plpgsql AS $$
     WITH NO DATA;
 
     ALTER TABLE {key_table}
-    ADD PRIMARY KEY ({sql_list(key)});
+      ADD PRIMARY KEY ({sql_list(key)});
 
     CREATE TEMP TABLE {refresh_table} (
     ) ON COMMIT DELETE ROWS;
@@ -111,8 +114,8 @@ LANGUAGE plpgsql AS $$
     FOR EACH ROW EXECUTE PROCEDURE {refresh_function}();
   END
 $$
-""".strip()
+    """.strip()
 
     yield f"""
 COMMENT ON FUNCTION {setup_function} IS {SqlString(f"Set up temp tables for {id}")}
-""".strip()
+    """.strip()

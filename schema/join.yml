@@ -53,6 +53,12 @@ definitions:
             description: Name of table
             title: Name
             type: string
+          refreshMode:
+            default: null
+            description: Refresh mode.
+            enum: [async, sync, null]
+            title: Refresh mode
+            type: [string, "null"]
           targetKey:
             default: null
             description: SQL expressions for target key values.
@@ -85,6 +91,12 @@ definitions:
         items: { type: string }
         title: Key
         type: array
+      refreshMode:
+        default: null
+        description: Refresh mode.
+        enum: [async, sync, null]
+        title: Refresh mode
+        type: [string, "null"]
       schema:
         default: null
         description:

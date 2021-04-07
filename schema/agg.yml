@@ -1,0 +1,62 @@
+$schema: http://json-schema.org/draft-07/schema
+description: Aggregate
+title: Aggregate config
+definitions:
+  aggregate:
+    properties:
+      combine:
+        title: Combine
+        type: string
+      value:
+        title: Expression
+        type: string
+    required: [combine, value]
+    type: object
+  group:
+    description: Group expression
+    title: Group
+    type: string
+  table:
+    description: Table.
+    properties:
+      name:
+        description: Name.
+        title: Name
+        type: string
+      schema:
+        default: null
+        description: Schema.
+        title: Schema
+        type: [string, "null"]
+    required: [name]
+    title: Target
+properties:
+  aggregates:
+    additionalProperties: { $ref: "#/definitions/aggregate" }
+    description: Aggregates.
+    title: Aggregates
+  consistency:
+    default: immediate
+    description: Consistency
+    enum: [deferred, immediate]
+    title: Consistency
+    type: string
+  filter:
+    default: null
+    description: Row filter
+    title: Filter
+    type: [string, "null"]
+  groups:
+    additionalProperties: { $ref: "#/definitions/group" }
+  id:
+    description: ID used to name-mangle.
+    title: ID
+    type: string
+  schema:
+    default: null
+    description: Schema for created objects.
+    title: Schema
+    type: [string, "null"]
+  source: { $ref: "#/definitions/table" }
+  target: { $ref: "#/definitions/table" }
+required: [aggregates, groups, id]

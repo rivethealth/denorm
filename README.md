@@ -32,20 +32,18 @@ pip3 install denorm
 
 Denorm has two modes of operation:
 
-### Agg
-
-_TODO_
+### Aggregate
 
 Create a materalized aggregate. For example, create an incrementally updated
 table of the following:
 
 ```sql
-SELECT author_id, count(*)
+SELECT author_id, count(*) AS book_count
 FROM book_author
 GROUP BY 1
 ```
 
-For full documentation, see [Agg](doc/agg.md).
+For full documentation, see [Aggregate](doc/agg.md).
 
 ### Join
 

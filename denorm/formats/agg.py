@@ -1,0 +1,62 @@
+import dataclasses
+import enum
+import typing
+
+import dataclasses_json
+
+from ..json import DataJsonFormat, ValidatingDataJsonFormat, package_json_format
+from ..sql import SqlId, SqlObject
+
+
+class AggConsistency(enum.Enum):
+    DEFERRED = "deferred"
+    IMMEDIATE = "immediate"
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass
+class AggAggregate:
+    combine: str
+    value: str
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass
+class AggTable:
+    name: str
+    schema: typing.Optional[str] = None
+
+    @property
+    def sql(self) -> SqlObject:
+        return (
+            SqlObject(SqlId(self.schema), SqlId(self.name))
+            if self.schema is not None
+            else SqlObject(SqlId(self.name))
+        )
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass
+class AggConfig:
+    groups: typing.Dict[str, str]
+    id: str
+    aggregates: typing.Dict[str, AggAggregate]
+    source: AggTable
+    target: AggTable
+    consistency: AggConsistency = AggConsistency.IMMEDIATE
+    filter: typing.Optional[str] = None
+    schema: typing.Optional[str] = None
+
+
+AGG_JSON_FORMAT = package_json_format("denorm.formats", "agg.json")
+
+AGG_DATA_JSON_FORMAT = DataJsonFormat(AGG_JSON_FORMAT, AggConfig.schema())

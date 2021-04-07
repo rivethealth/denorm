@@ -1,8 +1,8 @@
 # Join
 
-## Overview
+Join multiple tables.
 
-The steps are:
+## Steps
 
 1. Create a target table that will hold the denormalized data.
 

@@ -90,7 +90,7 @@ def _statements(config: JoinConfig):
             sync=config.sync,
             tables=config.tables,
             structure=structure,
-            consistency=config.consistency,
+            consistency=JoinConsistency.IMMEDIATE,
             target=config.target,
             setup=config.setup,
             table_id=table.dep,

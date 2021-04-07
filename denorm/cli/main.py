@@ -15,6 +15,10 @@ create_join_parser.add_argument("--output", default="-")
 def main():
     args = parser.parse_args()
 
+    if args.command == "create-agg":
+        from .create_agg import cli
+
+        cli(args)
     if args.command == "create-join":
         from .create_join import cli
 

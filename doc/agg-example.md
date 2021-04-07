@@ -1,4 +1,4 @@
-# Join example
+# Aggregate example
 
 Requires Docker and PostgreSQL client binaries.
 
@@ -38,10 +38,10 @@ CREATE TABLE book_author (
   UNIQUE (book_id, ordinal)
 );
 
-CREATE TABLE book_full (
-  id int PRIMARY KEY,
-  title text NOT NULL,
-  author_names text[] NOT NULL
+CREATE TABLE author_book_stat (
+  author_id int PRIMARY KEY,
+  _count bigint NOT NULL,
+  book_count int NOT NULL
 );
 '
 ```
@@ -50,41 +50,20 @@ CREATE TABLE book_full (
 
 ```sh
 echo "
-id: book_full
-tables:
-  author:
-    dep: book_author
-    depJoin: author.id = book_author.author_id
-    name: book_author
-  book:
-    name: book
-    targetKey: [book.id]
-  book_author:
-    dep: book
-    depJoin: book_author.book_id = book.id
-    name: book_author
+id: author_book_stat
+source:
+  name: book_author
 target:
-  columns: [id, title, author_names]
-  key: [id]
-  name: book_full
-query: >
-  SELECT
-    b.id,
-    b.title,
-    a.names
-  FROM
-    \$1 AS k (id)
-    JOIN book AS b ON k.id = b.id
-    CROSS JOIN LATERAL (
-      SELECT coalesce(array_agg(a.name ORDER BY ba.ordinal), '{}') AS names
-      FROM
-        author AS a
-        JOIN book_author AS ba ON a.id = ba.author_id
-      WHERE b.id = ba.book_id
-    ) AS a
+  name: author_book_stat
+groups:
+  author_id: author_id
+aggregates:
+  book_count:
+    combine: existing.book_count + excluded.book_count
+    value: sign * count(*)
 " \
   | yq \
-  | denorm create-join \
+  | denorm create-agg \
   | PGHOST=localhost psql
 ```
 
@@ -113,13 +92,13 @@ VALUES
 ## Inspect results
 
 ```sh
-PGHOST=localhost psql -c "SELECT * FROM book_full ORDER BY id"
+PGHOST=localhost psql -c "SELECT * FROM author_book_stat ORDER BY author_id"
 ```
 
 ```txt
- id |       title        |           author_names
-----+--------------------+-----------------------------------
-  1 | Good Omens         | {"Neil Gaiman","Terry Pratchett"}
-  2 | The Color of Magic | {"Terry Pratchett"}
+ author_id | _count | book_count
+-----------+--------+------------
+         1 |      1 |          1
+         2 |      2 |          2
 (2 rows)
 ```
