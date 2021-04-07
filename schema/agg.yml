@@ -5,12 +5,16 @@ definitions:
   aggregate:
     properties:
       combine:
+        default: null
+        description:
+          Combining expression. If null, defaults to existing.$name +
+          excluding.$name
         title: Combine
-        type: string
+        type: [string, "null"]
       value:
         title: Expression
         type: string
-    required: [combine, value]
+    required: [value]
     type: object
   group:
     description: Group expression

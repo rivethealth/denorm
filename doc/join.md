@@ -27,7 +27,7 @@ For a full working example, see [Join example](join-example.md).
 ## Schema
 
 See the JSONSchema ([JSON](../denorm/formats/join.json)
-[YAML](../schema/join.yml)) for documentation of full options.
+[YAML](../schema/join.yml)) for documentation of all options.
 
 ## Generated objects
 

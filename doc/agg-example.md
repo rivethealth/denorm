@@ -59,7 +59,6 @@ groups:
   author_id: author_id
 aggregates:
   book_count:
-    combine: existing.book_count + excluded.book_count
     value: sign * count(*)
 " \
   | yq \

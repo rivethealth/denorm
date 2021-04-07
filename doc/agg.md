@@ -25,7 +25,26 @@ For a full working example, see [Aggregate example](agg-example.md).
 ## Schema
 
 See the JSONSchema ([JSON](../denorm/formats/agg.json)
-[YAML](../schema/agg.yml)) for documentation of full options.
+[YAML](../schema/agg.yml)) for documentation of all options.
+
+## Target
+
+The target table must have a column `_count bigint`. This tracks the number of
+source records, so that aggregated records can be removed.
+
+## Groups
+
+The grouping key of the aggregate.
+
+## Aggregates
+
+Each aggregate defines it's value, using the variable `sign` to determine the sign of operation, e.g. `sign * count(*)`.
+
+It also defines a scalar combining expression, e.g. `existing.example = excluded.example`.
+
+## Filter
+
+A filter expression may be specified.
 
 ## Generated objects
 

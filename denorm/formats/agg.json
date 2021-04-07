@@ -6,15 +6,22 @@
     "aggregate": {
       "properties": {
         "combine": {
+          "default": null,
+          "description": "Combining expression. If null, defaults to existing.$name + excluding.$name",
           "title": "Combine",
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "value": {
           "title": "Expression",
           "type": "string"
         }
       },
-      "required": ["combine", "value"],
+      "required": [
+        "value"
+      ],
       "type": "object"
     },
     "group": {
@@ -34,10 +41,15 @@
           "default": null,
           "description": "Schema.",
           "title": "Schema",
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
-      "required": ["name"],
+      "required": [
+        "name"
+      ],
       "title": "Target"
     }
   },
@@ -52,7 +64,10 @@
     "consistency": {
       "default": "immediate",
       "description": "Consistency",
-      "enum": ["deferred", "immediate"],
+      "enum": [
+        "deferred",
+        "immediate"
+      ],
       "title": "Consistency",
       "type": "string"
     },
@@ -60,7 +75,10 @@
       "default": null,
       "description": "Row filter",
       "title": "Filter",
-      "type": ["string", "null"]
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "groups": {
       "additionalProperties": {
@@ -76,7 +94,10 @@
       "default": null,
       "description": "Schema for created objects.",
       "title": "Schema",
-      "type": ["string", "null"]
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "source": {
       "$ref": "#/definitions/table"
@@ -85,5 +106,9 @@
       "$ref": "#/definitions/table"
     }
   },
-  "required": ["aggregates", "groups", "id"]
+  "required": [
+    "aggregates",
+    "groups",
+    "id"
+  ]
 }

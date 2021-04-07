@@ -60,7 +60,7 @@ LANGUAGE plpgsql AS $$
     GROUP BY {sql_list(SqlNumber(i + 1) for i, _ in enumerate(groups))}
     {order}
     ON CONFLICT ({sql_list(group_columns)}) DO UPDATE
-      SET {sql_list(f'{SqlId(col)} = {agg.combine}' for col, agg in aggregates.items())};
+      SET {sql_list(f'{SqlId(col)} = {agg.combine_expression(col)}' for col, agg in aggregates.items())};
 
 {indent(finalize, 2)}
 

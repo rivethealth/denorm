@@ -26,9 +26,7 @@ def create_agg(io: AggIo):
 def _statements(config: AggConfig):
     structure = AggStructure(config.schema, config.id)
 
-    config.aggregates["_count"] = AggAggregate(
-        combine="existing._count + excluded._count", value="sign * count(*)"
-    )
+    config.aggregates["_count"] = AggAggregate(value="sign * count(*)")
 
     if config.consistency == AggConsistency.DEFERRED:
         yield from create_refresh_function(

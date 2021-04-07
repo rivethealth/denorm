@@ -19,8 +19,15 @@ class AggConsistency(enum.Enum):
 )
 @dataclasses.dataclass
 class AggAggregate:
-    combine: str
     value: str
+    combine: typing.Optional[str] = None
+
+    def combine_expression(self, name):
+        return (
+            self.combine
+            if self.combine is not None
+            else f"existing.{SqlId(name)} + excluded.{SqlId(name)}"
+        )
 
 
 @dataclasses_json.dataclass_json(
