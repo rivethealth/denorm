@@ -1,8 +1,10 @@
 import typing
 
+from pg_sql import SqlId, SqlString
+
 from .agg_common import AggStructure
 from .formats.agg import AggTable
-from .sql import SqlId, SqlString, table_fields
+from .sql import table_fields
 
 
 def create_cleanup(

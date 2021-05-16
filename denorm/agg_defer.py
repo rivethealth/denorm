@@ -1,8 +1,9 @@
 import typing
 
+from pg_sql import SqlId, SqlNumber, SqlString, sql_list
+
 from .agg_common import AggStructure
 from .formats.agg import AggAggregate, AggConfig, AggTable
-from .sql import SqlId, SqlNumber, SqlString, sql_list
 
 
 def create_refresh_function(

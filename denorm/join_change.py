@@ -1,9 +1,10 @@
 import enum
 import typing
 
+from pg_sql import SqlObject, SqlString
+
 from .join_common import Structure
 from .join_query import ProcessQuery
-from .sql import SqlObject, SqlString
 from .string import indent
 
 

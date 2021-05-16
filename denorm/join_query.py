@@ -1,5 +1,7 @@
 import typing
 
+from pg_sql import SqlId, SqlNumber, SqlObject, SqlString, sql_list
+
 from .format import format
 from .formats.join import (
     JoinConsistency,
@@ -11,17 +13,7 @@ from .formats.join import (
 )
 from .graph import recurse
 from .join_common import Structure, foreign_column, local_column
-from .sql import (
-    SqlId,
-    SqlNumber,
-    SqlObject,
-    SqlQuery,
-    SqlString,
-    SqlTableExpression,
-    sql_list,
-    table_fields,
-    update_excluded,
-)
+from .sql import SqlQuery, SqlTableExpression, table_fields, update_excluded
 from .sql_query import sync_query, upsert_query
 from .string import indent
 

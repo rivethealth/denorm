@@ -1,18 +1,12 @@
 import hashlib
 import typing
 
+from pg_sql import SqlId, SqlNumber, SqlObject, SqlString, sql_list
+
 from .formats.join import JoinTable
 from .join_common import Structure, foreign_column, local_column
 from .join_query import ProcessQuery
-from .sql import (
-    SqlId,
-    SqlNumber,
-    SqlObject,
-    SqlString,
-    SqlTableExpression,
-    sql_list,
-    table_fields,
-)
+from .sql import SqlTableExpression, table_fields
 from .string import indent
 
 

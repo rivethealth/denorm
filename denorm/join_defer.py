@@ -1,9 +1,11 @@
 import typing
 
+from pg_sql import SqlId, SqlNumber, SqlObject, SqlString, sql_list
+
 from .format import format
 from .formats.join import JoinSync, JoinTarget
 from .join_common import Structure
-from .sql import SqlId, SqlNumber, SqlObject, SqlString, sql_list, update_excluded
+from .sql import update_excluded
 from .sql_query import sync_query, upsert_query
 from .string import indent
 

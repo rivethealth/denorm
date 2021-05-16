@@ -1,8 +1,9 @@
 import typing
 
+from pg_sql import SqlId, SqlNumber, SqlString, sql_list
+
 from .agg_common import AggStructure
 from .formats.agg import AggAggregate, AggConsistency, AggTable
-from .sql import SqlId, SqlNumber, SqlString, sql_list
 from .string import indent
 
 

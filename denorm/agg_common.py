@@ -1,6 +1,6 @@
 import typing
 
-from .sql import SqlId, SqlObject
+from pg_sql import SqlId, SqlObject
 
 
 class AggStructure:
@@ -46,7 +46,7 @@ class AggStructure:
         return self._sql_object(self._name("refresh"))
 
     def refresh_table(self) -> SqlObject:
-        return self._sql_object(self._name("refresh"))
+        return SqlObject(SqlId("pg_temp"), self._name("refresh"))
 
     def setup_function(self) -> SqlObject:
         return self._sql_object(self._name("setup"))

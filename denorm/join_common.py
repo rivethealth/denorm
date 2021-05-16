@@ -1,6 +1,6 @@
 import typing
 
-from .sql import SqlId, SqlObject
+from pg_sql import SqlId, SqlObject
 
 
 class Structure:

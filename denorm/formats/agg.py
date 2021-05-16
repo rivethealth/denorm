@@ -3,9 +3,9 @@ import enum
 import typing
 
 import dataclasses_json
+from pg_sql import SqlId, SqlObject
 
 from ..json import DataJsonFormat, ValidatingDataJsonFormat, package_json_format
-from ..sql import SqlId, SqlObject
 
 
 class AggConsistency(enum.Enum):

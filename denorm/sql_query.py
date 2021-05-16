@@ -1,15 +1,8 @@
 import typing
 
-from .sql import (
-    SqlId,
-    SqlNumber,
-    SqlObject,
-    SqlQuery,
-    SqlTableExpression,
-    sql_list,
-    table_fields,
-    update_excluded,
-)
+from pg_sql import SqlId, SqlNumber, SqlObject, sql_list
+
+from .sql import SqlQuery, SqlTableExpression, table_fields, update_excluded
 from .string import indent
 
 
