@@ -13,12 +13,16 @@ docker run \
   postgres
 ```
 
-Open a new terminal session for the remaining commands.
+Open a new terminal session for the remaining commands, and run
+
+```sh
+export PGHOST=localhost
+```
 
 ## Create database
 
 ```sh
-PGHOST=localhost psql -c '
+psql -c '
 CREATE TABLE author (
   id int PRIMARY KEY,
   name text NOT NULL
@@ -85,13 +89,13 @@ query: >
 " \
   | yq \
   | denorm create-join \
-  | PGHOST=localhost psql
+  | psql
 ```
 
 ## Add records
 
 ```sh
-PGHOST=localhost psql -c "
+psql -c "
 INSERT INTO author (id, name)
 VALUES
   (1, 'Neil Gaiman'),
@@ -113,7 +117,7 @@ VALUES
 ## Inspect results
 
 ```sh
-PGHOST=localhost psql -c "SELECT * FROM book_full ORDER BY id"
+psql -c "SELECT * FROM book_full ORDER BY id"
 ```
 
 ```txt

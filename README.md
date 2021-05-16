@@ -11,9 +11,9 @@ maintenance, materialized view
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [Install](#install)
-- [Operations](#operations)
-- [Usage](#usage)
 - [Features](#features)
+- [Usage](#usage)
+- [Operations](#operations)
 - [Performance](#performance)
 - [Migration](#migration)
 - [Limitations](#limitations)
@@ -28,14 +28,28 @@ maintenance, materialized view
 pip3 install denorm
 ```
 
+## Features
+
+- Efficient incremental updates
+- Arbitrarily complex SQL features and expressions
+- Configurable consistency
+- Deadlock-free
+
+## Usage
+
+For usage, see [Usage](doc/usage.md).
+
 ## Operations
 
 Denorm has two modes of operation:
 
 ### Aggregate
 
-Create a materalized aggregate. For example, create an incrementally updated
-table of the following:
+Create a materalized aggregate of a single table.
+
+For documentation, see [Aggregate](doc/agg.md).
+
+Example query:
 
 ```sql
 SELECT author_id, count(*) AS book_count
@@ -43,12 +57,13 @@ FROM book_author
 GROUP BY 1
 ```
 
-For full documentation, see [Aggregate](doc/agg.md).
-
 ### Join
 
-Create a materialized join. For example, create an incrementally updated table
-of the following:
+Create a materialized join of several tables.
+
+For documentation, see [Join](doc/join.md).
+
+Example query:
 
 ```sql
 SELECT
@@ -66,34 +81,20 @@ FROM
   ) AS a
 ```
 
-For full documentation, see [Join](doc/join.md).
-
-## Usage
-
-See [Usage](doc/usage.md).
-
-## Features
-
-- Efficient incremental updates
-- Arbitrarily complex SQL features and expressions
-- Configurable consistency
-- Deadlock-free
-
 ## Performance
 
 Materialized views exchange slower write performance for higher read
 performance.
 
 While it's impossible to completely escape that fundamental trade-off, Denorm is
-to be on par with hand-tuned methods.
-
-Statement triggers reduce overhead for modifying many records.
+implementated to be on par with hand-tuned methods, especially for batch
+updates.
 
 When applicable, Denorm uses tables with `ON COMMIT DELETE` to minimize I/O
 overhead. However, since PostgreSQL does not support global temporary tables,
 Denorm must use session temp tables. Thus the first update in a session may have
-several ms of overhead in setting up these tables. Be sure to pool connections
-and vacuum reguarly to prevent system tables from bloating.
+several millseconds of overhead in creating these tables. Be sure to pool
+connections and vacuum reguarly to prevent system tables from bloating.
 
 ## Migration
 
@@ -104,6 +105,5 @@ migration scripts.
 
 ## Limitations
 
-Note that PostgreSQL identifiers are limited to 63 characters. Denorm mangles
-names for generated objects, so long IDs and table names may run into this
-limit.
+Denorm mangles names for generated objects, Long IDs and table names may run
+into the PostgreSQL limit of 63 characters for identifiers.
