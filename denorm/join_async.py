@@ -18,7 +18,8 @@ def create_queue(
     tables: typing.Dict[str, JoinTable],
 ):
     table = tables[table_id]
-    foreign_table = tables[table.dep]
+    dep = table.join
+    foreign_table = tables[dep]
 
     if table.lock_id is not None:
         lock_id = table.lock_id
@@ -116,10 +117,10 @@ ORDER BY k.* DESC
     """.strip()
 
     key1_query = f"""
-SELECT {table_fields(SqlId(table.dep), (SqlId(column) for column in foreign_table.key))}
-FROM {foreign_table.sql} AS {SqlId(table.dep)}
+SELECT {table_fields(SqlId(dep), (SqlId(column) for column in foreign_table.key))}
+FROM {foreign_table.sql} AS {SqlId(dep)}
 JOIN (VALUES ({table_fields(SqlId("item"), local_columns)})) AS {SqlId(table_id)} ({sql_list(SqlId(col) for col in table.key)})
-    ON {table.dep_join}
+    ON {table.join_on}
 ORDER BY {sql_list(SqlNumber(i + 1) for i, _ in enumerate(foreign_table.key))}
 LIMIT max_records
     """.strip()
@@ -128,10 +129,10 @@ LIMIT max_records
     gather1.append(SqlId("_other"), update_queue)
 
     key2_query = f"""
-SELECT {table_fields(SqlId(table.dep), (SqlId(column) for column in foreign_table.key))}
-FROM {foreign_table.sql} AS {SqlId(table.dep)}
+SELECT {table_fields(SqlId(dep), (SqlId(column) for column in foreign_table.key))}
+FROM {foreign_table.sql} AS {SqlId(dep)}
 JOIN (VALUES ({table_fields(SqlId("item"), local_columns)})) AS {SqlId(table_id)} ({sql_list(SqlId(col) for col in table.key)})
-  ON {table.dep_join}
+  ON {table.join_on}
 ORDER BY {sql_list(SqlNumber(i + 1) for i, _ in enumerate(foreign_table.key))}
 LIMIT max_records
     """.strip()
@@ -153,7 +154,6 @@ LANGUAGE plpgsql AS $$
     END IF;
 
 {indent(process_query.finalize(), 2)}
-
 
     RETURN (
       {table_fields(SqlId('item'), local_columns)},

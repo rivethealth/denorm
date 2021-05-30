@@ -5,13 +5,13 @@ from pg_sql import SqlId, SqlNumber, SqlObject, SqlString, sql_list
 from .format import format
 from .formats.join import (
     JoinConsistency,
-    JoinDepMode,
     JoinHook,
+    JoinJoinMode,
     JoinSync,
     JoinTable,
     JoinTarget,
 )
-from .graph import recurse
+from .graph import closure
 from .join_common import Structure, foreign_column, local_column
 from .sql import SqlQuery, SqlTableExpression, table_fields, update_excluded
 from .sql_query import sync_query, upsert_query
@@ -59,11 +59,11 @@ class ProcessQuery:
         self._tables = tables
         self._target = target
 
-        dep_ids = recurse(
-            table_id,
-            lambda id: tables[id].dep
-            if tables[id].dep_mode == JoinDepMode.SYNC
-            else None,
+        dep_ids = closure(
+            [table_id],
+            lambda id: [tables[id].join] or []
+            if tables[id].join_mode == JoinJoinMode.SYNC and tables[id].join
+            else [],
         )
         self._deps = [(id, tables[id]) for id in dep_ids]
 
@@ -77,8 +77,8 @@ class ProcessQuery:
 
     def gather(self, root: str):
         _, last_table = self._deps[0]
-        if last_table.dep is not None:
-            foreign = self._tables[last_table.dep]
+        if last_table.join is not None:
+            foreign = self._tables[last_table.join]
         else:
             foreign = None
 
@@ -110,7 +110,7 @@ def _prepare(
     setup: typing.Optional[JoinHook],
     deps: typing.List[typing.Tuple[str, JoinTable]],
 ):
-    if setup is None or deps[0][1].dep_mode == JoinDepMode.ASYNC:
+    if setup is None or deps[0][1].join_mode == JoinJoinMode.ASYNC:
         setup_sql = ""
     else:
         setup_sql = f"""
@@ -140,26 +140,25 @@ def _gather(
     target: JoinTarget,
 ) -> SqlQuery:
     key_query = ""
-    for i, (dep_id, dep) in enumerate(reversed(deps)):
+    for i, (dep_id, dep) in enumerate(deps):
         table_sql = root if i == len(deps) - 1 else str(dep.sql)
 
         if dep.target_key is not None:
-            target_columns = [SqlId(column) for column in dep.target_key]
-            key_query += (
-                f"SELECT DISTINCT {table_fields(SqlId(dep_id), target_columns)}"
-            )
+            key_query += f"SELECT DISTINCT {sql_list(f'{k} AS {SqlId(t)}' for t, k in zip(target.key, dep.target_key))}"
             key_query += f"\nFROM"
             key_query += f"\n  {table_sql} AS {SqlId(dep_id)}"
-        elif dep.dep_mode == JoinDepMode.ASYNC:
+        elif dep.join_mode == JoinJoinMode.ASYNC:
             dep_columns = [SqlId(column) for column in dep.key]
             key_query += f"SELECT DISTINCT {table_fields(SqlId(dep_id), dep_columns)}"
             key_query += f"\nFROM"
             key_query += f"\n  {table_sql} AS {SqlId(dep_id)}"
         else:
-            key_query += f"\n  JOIN {table_sql} AS {SqlId(dep_id)} ON {dep.dep_join}"
+            if dep.join_other is not None:
+                key_query += f"\n  {dep.join_other}"
+            key_query += f"\n  JOIN {table_sql} AS {SqlId(dep_id)} ON {dep.join_on}"
 
     last_id, last_table = deps[-1]
-    if last_table.dep_mode == JoinDepMode.ASYNC:
+    if last_table.join_mode == JoinJoinMode.ASYNC:
         queue_table = structure.queue_table(last_id)
 
         local_columns = [local_column(column) for column in last_table.key]
@@ -222,7 +221,7 @@ def _finalize(
     target: JoinTarget,
 ) -> str:
     last_id, last_table = deps[-1]
-    if last_table.dep_mode == JoinDepMode.ASYNC:
+    if last_table.join_mode == JoinJoinMode.ASYNC:
         queue_table = structure.queue_table(last_id)
         return f"""
 NOTIFY {SqlId(str(queue_table))};

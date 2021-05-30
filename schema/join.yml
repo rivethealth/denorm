@@ -16,67 +16,53 @@ definitions:
     type: object
   table:
     description: Table
-    allOf:
-      - properties:
-          dep:
-            default: null
-            description: ID of dependency table.
-            title: Dependency
-            type: [string, "null"]
-          depJoin:
-            default: null
-            description: SQL expression to join to dependency.
-            title: Dependency join
-            type: [string, "null"]
-          depMode:
-            default: sync
-            description: Mode of dependency join.
-            enum: [async, sync]
-            title: Dependency mode
-            type: string
-          lockId:
-            default: null
-            description:
-              Advisory lock space to use for queueing. If null, it is generated
-              from the ID and table ID.
-            maximum: 32677
-            minimum: -32678
-            title: Lock ID
-            type: [integer, "null"]
-          key:
-            default: null
-            description: Unique key.
-            items: { type: string }
-            title: key
-            type: array
-          name:
-            description: Name of table
-            title: Name
-            type: string
-          refreshMode:
-            default: null
-            description: Refresh mode.
-            enum: [async, sync, null]
-            title: Refresh mode
-            type: [string, "null"]
-          targetKey:
-            default: null
-            description: SQL expressions for target key values.
-            items: { type: string }
-            title: key
-            type: [array, "null"]
-        required: [name]
-        type: object
-      - oneOf:
-          - properties:
-              dep: { type: string }
-              depJoin: { type: string }
-            required: [dep, depJoin]
-            type: object
-          - properties:
-              targetKey: { type: array }
-            required: [targetKey]
-            type: object
+    dependencies:
+      join: [joinOn]
+      joinOn: [join]
+    properties:
+      lockId:
+        default: null
+        description:
+          Advisory lock space to use for queueing. If null, it is generated from
+          the ID and table ID.
+        maximum: 32677
+        minimum: -32678
+        title: Lock ID
+        type: [integer, "null"]
+      join:
+        default: null
+        description: IDs of dependency table.
+        title: Join dependency
+        type: [string, "null"]
+      joinOn:
+        default: null
+        description: SQL expression to join to dependency.
+        title: Dependency join
+        type: [string, "null"]
+      joinMode:
+        default: sync
+        description: Mode of dependency join.
+        enum: [async, sync]
+        title: Join consistency
+        type: [string, "null"]
+      key:
+        default: null
+        description: Unique key.
+        items: { type: string }
+        title: key
+        type: array
+      name:
+        description: Name of table
+        title: Name
+        type: string
+      targetKey:
+        default: null
+        description: SQL expressions for target key values.
+        items: { type: string }
+        title: key
+        type: [array, "null"]
+    required: [name]
+    type: object
     title: Table
   target:
     properties:
@@ -91,12 +77,6 @@ definitions:
         items: { type: string }
         title: Key
         type: array
-      refreshMode:
-        default: null
-        description: Refresh mode.
-        enum: [async, sync, null]
-        title: Refresh mode
-        type: [string, "null"]
       schema:
         default: null
         description:
@@ -137,9 +117,9 @@ properties:
   sync:
     default: full
     description:
-      Synchronization mode. Full upserts and deletes records. Upsert only
-      upserts records.
-    enum: [full, upsert]
+      Synchronization mode. Insert inserts. Upsert inserts and updates. Full
+      inserts, updates, and deletes.
+    enum: [full, insert, upsert]
     title: Synchronization
     type: string
   tables:

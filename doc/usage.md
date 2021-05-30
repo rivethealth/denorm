@@ -3,13 +3,14 @@
 ## common
 
 ```sh
-usage: denorm [-h] {create-agg,create-join} ...
+usage: denorm [-h] [-v] {create-agg,create-join} ...
 
 positional arguments:
   {create-agg,create-join}
 
 optional arguments:
   -h, --help            show this help message and exit
+  -v, --version         show version and exit
 ```
 
 ## create-agg

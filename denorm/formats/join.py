@@ -13,7 +13,7 @@ class JoinConsistency(enum.Enum):
     IMMEDIATE = "immediate"
 
 
-class JoinDepMode(enum.Enum):
+class JoinJoinMode(enum.Enum):
     ASYNC = "async"
     SYNC = "sync"
 
@@ -50,9 +50,10 @@ class JoinTarget:
 @dataclasses.dataclass
 class JoinTable:
     name: str
-    dep: typing.Optional[str] = None
-    dep_join: typing.Optional[str] = None
-    dep_mode: JoinDepMode = JoinDepMode.SYNC
+    join: typing.Optional[str] = None
+    join_on: typing.Optional[str] = None
+    join_mode: JoinJoinMode = JoinJoinMode.SYNC
+    join_other: typing.Optional[str] = None
     key: typing.Optional[typing.List[str]] = None
     lock_id: typing.Optional[int] = None
     schema: typing.Optional[str] = None

@@ -26,11 +26,11 @@ _SCHEMA_JSON = {
         "child": {
             "name": "child",
             "schema": "public",
-            "targetKey": ["id"],
+            "targetKey": ["child.id"],
         },
         "parent": {
-            "dep": "child",
-            "depJoin": "parent.id = child.parent_id",
+            "join": "child",
+            "joinOn": "parent.id = child.parent_id",
             "name": "parent",
             "schema": "public",
         },

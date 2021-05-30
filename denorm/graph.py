@@ -10,15 +10,24 @@ class CycleError(Exception, typing.Generic[T]):
         super().__init__(f"Cycle: {elements_str}")
 
 
-def recurse(start: T, fn: typing.Callable[[T], typing.Optional[T]]):
+def closure(start: typing.List[T], fn: typing.Callable[[T], typing.List[T]]):
     visited: typing.Set[T] = set()
     chain: typing.List[T] = []
 
-    while start is not None:
-        if start in visited:
-            raise CycleError(chain)
+    def visit(item: T):
+        if item in chain:
+            raise CycleError(chain[chain.index(item) :])
 
-        yield start
-        visited.add(start)
-        chain.append(start)
-        start = fn(start)
+        if item in visited:
+            return
+
+        chain.append(item)
+        visited.add(item)
+        for dep in fn(item):
+            yield from visit(dep)
+        chain.pop()
+
+        yield item
+
+    for item in start:
+        yield from visit(item)

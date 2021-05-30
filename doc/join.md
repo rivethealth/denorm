@@ -51,8 +51,8 @@ If the primary key of the target is known from the table,
 
 Otherwise, it must reference another table,
 
-- dep - Identifier of the source to reference.
-- depJoin - Expression for an inner join on the two sources.
+- join - Expression for an inner join on the two sources.
+- joinDep - Identify of the source to reference.
 
 ## Constistency
 
@@ -90,7 +90,7 @@ own unique key.
 Building on the book example, suppose each book had a genre, and the genre's
 name is to be included in the target table. A genre may have hundreds of
 thousands of books, so we'll chunk updates to `genre` by iterating through
-`book` records by `id`.
+related `book` records by `id`.
 
 <details>
 <summary>book_full.yml</summary>
@@ -98,31 +98,30 @@ thousands of books, so we'll chunk updates to `genre` by iterating through
 ```yml
 tables:
   author:
-    dep: book_author
-    depJoin: author.id = book_author.author_id
+    join: author.id = book_author.author_id
+    joinDep: book_author
     name: book_author
     schema: public
   book:
     key: [id]
     name: book
     schema: public
-    targetKey: [id]
+    targetKey: [book.id]
   book_author:
-    dep: book
-    depJoin: book_author.book_id = book.id
     name: book_author
     schema: public
+    targetKey: [book_author.book_id]
   genre:
-    dep: book
-    depJoin: book.genre_id = genre.id
-    depMode: iterate
+    join: book.genre_id = genre.id
+    joinDep: book
+    joinMode: iterate
     name: genre
     schema: public
 ```
 
 </details>
 
-Note that for performance, `book` must have an index on `genre_id, id`.
+Note that for good performance, `book` must have an index on `genre_id, id`.
 
 #### Worker
 
@@ -153,11 +152,11 @@ If this returns a non-null bigint, there is work available. Run a transaction
 and pass that value to the update function.
 
 ```sql
-BEGIN
+BEGIN;
 -- Refresh the target for up to 1000 corresponding book_author records.
 -- Return whether additional processing remains to be done.
 SELECT book_full__rfs__genre($1, 1000);
-COMMIT
+COMMIT;
 ```
 
 Release the lock.

@@ -36,17 +36,16 @@ _SCHEMA_JSON = {
     "schema": "public",
     "tables": {
         "author": {
-            "dep": "book_author",
-            "depJoin": "author.id = book_author.author_id",
+            "join": "book_author",
+            "joinOn": "author.id = book_author.author_id",
             "name": "book_author",
             "schema": "public",
         },
-        "book": {"name": "book", "schema": "public", "targetKey": ["id"]},
+        "book": {"name": "book", "schema": "public", "targetKey": ["book.id"]},
         "book_author": {
-            "dep": "book",
-            "depJoin": "book_author.book_id = book.id",
             "name": "book_author",
             "schema": "public",
+            "targetKey": ["book_author.book_id"],
         },
     },
     "target": {

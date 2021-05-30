@@ -37,7 +37,7 @@ from .formats.join import (
     JOIN_DATA_JSON_FORMAT,
     JoinConfig,
     JoinConsistency,
-    JoinDepMode,
+    JoinJoinMode,
 )
 from .join_async import create_queue
 from .join_change import create_change
@@ -83,7 +83,7 @@ def _statements(config: JoinConfig):
         )
 
     for table_id, table in config.tables.items():
-        if table.dep_mode != JoinDepMode.ASYNC:
+        if table.join_mode != JoinJoinMode.ASYNC:
             continue
 
         process_query = ProcessQuery(
@@ -93,7 +93,7 @@ def _statements(config: JoinConfig):
             consistency=JoinConsistency.IMMEDIATE,
             target=config.target,
             setup=config.setup,
-            table_id=table.dep,
+            table_id=table.join,
             query=config.query,
         )
 

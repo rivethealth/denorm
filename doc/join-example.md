@@ -57,15 +57,15 @@ echo "
 id: book_full
 tables:
   author:
-    dep: book_author
-    depJoin: author.id = book_author.author_id
+    join: book_author
+    joinOn: author.id = book_author.author_id
     name: book_author
   book:
     name: book
     targetKey: [book.id]
   book_author:
-    dep: book
-    depJoin: book_author.book_id = book.id
+    name: book_author
+    targetKey: [book_author.book_id]
     name: book_author
 target:
   columns: [id, title, author_names]
