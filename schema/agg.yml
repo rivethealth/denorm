@@ -1,6 +1,5 @@
 $schema: http://json-schema.org/draft-07/schema
-description: Aggregate
-title: Aggregate config
+description: Configuration for aggregating a table.
 definitions:
   aggregate:
     properties:
@@ -64,3 +63,4 @@ properties:
   source: { $ref: "#/definitions/table" }
   target: { $ref: "#/definitions/table" }
 required: [aggregates, groups, id]
+title: Aggregate config

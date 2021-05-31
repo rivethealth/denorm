@@ -26,14 +26,13 @@ For a full working example, see [Join example](join-example.md).
 
 ## Schema
 
-See the JSONSchema ([JSON](../denorm/formats/join.json)
-[YAML](../schema/join.yml)) for documentation of all options.
+See [Join config](join-schema.md) for documentation of all options.
 
 ## Generated objects
 
-ID is used to name database objects.
+The `id` is used to name database objects.
 
-Database objects are created in the schema if given. Otherwise they will be
+Database objects are created in `schema`, if given. Otherwise they will be
 created in the default schema.
 
 ## Target
@@ -51,8 +50,8 @@ If the primary key of the target is known from the table,
 
 Otherwise, it must reference another table,
 
-- join - Expression for an inner join on the two sources.
-- joinDep - Identify of the source to reference.
+- join - Identify of the source to reference.
+- joinOn - Expression for an inner join on the two sources.
 
 ## Constistency
 
@@ -79,13 +78,11 @@ Join to all dependency records in the current transaction.
 
 ### Async
 
-If tables have an 1:N relationship with a very large N, say tens of thousands,
-it may not be feasible to process all records a single transaction. Denorm
+If tables have an 1:N relationship with a very large N — say, tens of thousands
+— it may not be feasible to process all records a single transaction. Denorm
 allows the join to be broken up over multiple transactions.
 
-Both the table and the dependency table must have a defined unique key. The
-dependency table must have an btree index that covers the foreign key and its
-own unique key.
+Both the table and the dependency table must have a defined unique key.
 
 Building on the book example, suppose each book had a genre, and the genre's
 name is to be included in the target table. A genre may have hundreds of
@@ -121,8 +118,6 @@ tables:
 
 </details>
 
-Note that for good performance, `book` must have an index on `genre_id, id`.
-
 #### Worker
 
 Updates will not automatically affect the target table. Instead, changes are
@@ -138,8 +133,11 @@ The queue uses
 CALL book_full__pcs__genre(1000);
 ```
 
+This function should be called periodically. Additionally workers can listen to
+the `public.book_full__chg__genre` listener.
+
 <details>
-<summary>Functions may be called individually for additional control.</summary>
+<summary>Functions may be called individually for additional control or performance monitoring.</summary>
 
 Run the begin function to find and lock a record that requires work.
 
@@ -159,7 +157,7 @@ SELECT book_full__rfs__genre($1, 1000);
 COMMIT;
 ```
 
-Release the lock.
+Release the lock. (Alternatively, end the connection.)
 
 ```sql
 -- Unlock the author change.
@@ -167,9 +165,6 @@ SELECT book_full__end__genre($1)
 ```
 
 </details>
-
-This function should be called periodically. Additionally workers can listen to
-the `public.book_full__chg__genre` listener.
 
 ### Errors
 
@@ -180,6 +175,16 @@ of whether processing succeeds. Therefore, problematic records will not prevent
 processing other change records, but you should fix the error soon, as that
 change is stuck until then.
 
-### Limitations
+### Performance
 
-This option is only valid on single-table sources.
+The dependency table should have an btree index that covers the foreign key and
+its own unique key, in that order.
+
+In the earlier example,
+
+```sql
+CREATE INDEX ON book (genre_id, id);
+```
+
+Take careful note of this requirement, as indices do not usually include the
+unique key of the table.

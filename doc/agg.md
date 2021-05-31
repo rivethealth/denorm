@@ -24,8 +24,7 @@ For a full working example, see [Aggregate example](agg-example.md).
 
 ## Schema
 
-See the JSONSchema ([JSON](../denorm/formats/agg.json)
-[YAML](../schema/agg.yml)) for documentation of all options.
+See [Aggregate config](agg-schema.md) for documentation of all options.
 
 ## Target
 

@@ -41,6 +41,21 @@ denorm/formats/%.json: schema/%.yml
 	< $< yq > $@
 
 ###
+# Markdown
+###
+
+SCHEMA_DOC := $(SCHEMA_TGT:denorm/formats/%.json=doc/%-schema.md)
+
+.PHONY: doc
+doc: doc/usage.md $(SCHEMA_DOC)
+
+doc/%-schema.md: denorm/formats/%.json
+	jsonschema2md $< $@
+
+doc/usage.md: script/usage-doc.sh
+	$< > $@
+
+###
 # Format
 ###
 FORMAT_SRC := $(shell find . $(TARGET:%=-not \$(LPAREN) -name % -prune \$(RPAREN)) -name '*.py')

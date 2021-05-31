@@ -10,13 +10,10 @@ usage() {
   echo
 }
 
-exec 1>"$base/../doc/usage.md"
-
-echo '# Usage'
-echo
-
-usage common denorm --help
-usage create-agg denorm create-agg --help
-usage create-join denorm create-join --help
-
-"$base/../node_modules/.bin/prettier" --write "$base/../doc/usage.md"
+(
+  echo '# Usage';
+  echo;
+  usage common denorm --help;
+  usage create-agg denorm create-agg --help;
+  usage create-join denorm create-join --help
+) | "$base/../node_modules/.bin/prettier" --parser markdown

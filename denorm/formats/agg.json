@@ -1,7 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema",
-  "description": "Aggregate",
-  "title": "Aggregate config",
+  "description": "Configuration for aggregating a table.",
   "definitions": {
     "aggregate": {
       "properties": {
@@ -87,5 +86,6 @@
       "$ref": "#/definitions/table"
     }
   },
-  "required": ["aggregates", "groups", "id"]
+  "required": ["aggregates", "groups", "id"],
+  "title": "Aggregate config"
 }
