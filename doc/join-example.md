@@ -59,7 +59,7 @@ tables:
   author:
     join: book_author
     joinOn: author.id = book_author.author_id
-    name: book_author
+    name: author
   book:
     name: book
     targetKey: [book.id]
@@ -67,11 +67,11 @@ tables:
     name: book_author
     targetKey: [book_author.book_id]
     name: book_author
-target:
+targetTable:
   columns: [id, title, author_names]
   key: [id]
   name: book_full
-query: >
+targetQuery: >
   SELECT
     b.id,
     b.title,

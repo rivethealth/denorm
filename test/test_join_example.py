@@ -48,13 +48,13 @@ _SCHEMA_JSON = {
             "targetKey": ["book_author.book_id"],
         },
     },
-    "target": {
+    "targetTable": {
         "columns": ["id", "title", "author_names"],
         "name": "book_full",
         "schema": "public",
         "key": ["id"],
     },
-    "query": """
+    "targetQuery": """
     SELECT
         b.id,
         b.title,

@@ -1,6 +1,15 @@
+import dataclasses
 import typing
 
 from pg_sql import SqlId, SqlObject
+
+from .sql import SqlQuery
+
+
+@dataclasses.dataclass
+class Key:
+    definition: str
+    names: typing.List[str]
 
 
 class Structure:
@@ -39,17 +48,8 @@ class Structure:
     def queue_table(self, table_id: str) -> SqlObject:
         return self._sql_object(self._name(f"que__{table_id}"))
 
-    def queue_begin_function(self, table_id: str) -> SqlObject:
-        return self._sql_object(self._name(f"beg__{table_id}"))
-
     def queue_process_function(self, table_id: str) -> SqlObject:
         return self._sql_object(self._name(f"pcs__{table_id}"))
-
-    def queue_refresh_function(self, table_id: str) -> SqlObject:
-        return self._sql_object(self._name(f"rfs__{table_id}"))
-
-    def queue_end_function(self, table_id: str) -> SqlObject:
-        return self._sql_object(self._name(f"end__{table_id}"))
 
     def key_table(self) -> SqlObject:
         return SqlObject(SqlId("pg_temp"), self._name("key"))
@@ -73,3 +73,11 @@ def local_column(column: str) -> str:
 
 def foreign_column(column: str) -> str:
     return SqlId(f"fgn_{column}")
+
+
+class JoinTarget(typing.Protocol):
+    def key(self) -> typing.Optional[Key]:
+        pass
+
+    def sql(self, key_table: SqlObject) -> SqlQuery:
+        pass

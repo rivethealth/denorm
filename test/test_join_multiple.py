@@ -69,13 +69,13 @@ _SCHEMA_JSON = {
             "name": "parent",
         },
     },
-    "target": {
+    "targetTable": {
         "key": ["id"],
         "columns": ["id", "parent_name", "other_names"],
         "name": "child_full",
         "schema": "public",
     },
-    "query": """
+    "targetQuery": """
         SELECT c.id, p.name, gc.names
         FROM $1 AS d
             JOIN child c ON d.id = c.id

@@ -36,7 +36,7 @@ _SCHEMA_JSON = {
         },
     },
     "sync": "upsert",
-    "target": {
+    "targetTable": {
         "key": ["id"],
         "name": "child_key",
         "schema": "public",

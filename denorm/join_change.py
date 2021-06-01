@@ -4,7 +4,7 @@ import typing
 from pg_sql import SqlObject, SqlString
 
 from .join_common import Structure
-from .join_query import ProcessQuery
+from .join_key import KeyResolver
 from .string import indent
 
 
@@ -17,7 +17,7 @@ def create_change(
     id: str,
     table: SqlObject,
     table_id: str,
-    process_query: ProcessQuery,
+    resolver: KeyResolver,
     structure: Structure,
 ):
     change_1_function = structure.change_1_function(table_id)
@@ -33,7 +33,7 @@ def create_change(
             change_type=change_type,
             function=change_function,
             id=id,
-            process_query=process_query,
+            resolver=resolver,
             table_id=table_id,
         )
 
@@ -63,7 +63,7 @@ def _create_change_function(
     change_type: _ChangeType,
     function: SqlObject,
     id: str,
-    process_query: ProcessQuery,
+    resolver: KeyResolver,
     table_id: str,
 ):
     root = (
@@ -76,11 +76,7 @@ def _create_change_function(
 CREATE FUNCTION {function} () RETURNS trigger
 LANGUAGE plpgsql AS $$
   BEGIN
-{indent(process_query.prepare(), 2)}
-
-{indent(str(process_query.gather(root)), 2)};
-
-{indent(process_query.finalize(), 2)}
+{indent(resolver.sql(root), 2)}
 
     RETURN NULL;
   END;

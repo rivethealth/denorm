@@ -9,7 +9,7 @@ from .string import indent
 
 
 @dataclasses.dataclass
-class SqlTableExpression:
+class SqlTableExpr:
     name: SqlId
     query: str
 
@@ -23,15 +23,13 @@ class SqlTableExpression:
 @dataclasses.dataclass
 class SqlQuery:
     query: str
-    expressions: typing.List[SqlTableExpression] = dataclasses.field(
-        default_factory=list
-    )
+    expressions: typing.List[SqlTableExpr] = dataclasses.field(default_factory=list)
 
     def append(self, id: SqlId, query: str):
-        self.expressions.append(SqlTableExpression(id, self.query))
+        self.expressions.append(SqlTableExpr(id, self.query))
         self.query = query
 
-    def prepend(self, expression: SqlTableExpression):
+    def prepend(self, expression: SqlTableExpr):
         self.expressions.insert(0, expression)
 
     def __str__(self) -> str:

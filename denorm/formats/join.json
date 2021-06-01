@@ -19,6 +19,23 @@
       "title": "Hook",
       "type": "object"
     },
+    "column": {
+      "description": "Column.",
+      "properties": {
+        "name": {
+          "description": "Name of column.",
+          "title": "Name",
+          "type": "string"
+        },
+        "type": {
+          "description": "Type of column.",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": ["name", "type"],
+      "title": "Column"
+    },
     "table": {
       "description": "Table",
       "dependencies": {
@@ -81,11 +98,12 @@
       "type": "object",
       "title": "Table"
     },
-    "target": {
+    "targetTable": {
+      "description": "Target table.",
       "properties": {
         "columns": {
           "default": null,
-          "description": "Columns",
+          "description": "Columns.",
           "items": {
             "type": "string"
           },
@@ -93,12 +111,20 @@
           "type": ["array", "null"]
         },
         "key": {
+          "default": null,
           "description": "Key columns",
           "items": {
             "type": "string"
           },
           "title": "Key",
           "type": "array"
+        },
+        "refresh": {
+          "default": "full",
+          "description": "Insert inserts. Full inserts, updates, and deletes. Insert only inserts. Upsert inserts and updates.",
+          "enum": ["full", "insert", "upsert"],
+          "title": "Refresh mode",
+          "type": "string"
         },
         "schema": {
           "default": null,
@@ -112,7 +138,8 @@
           "type": "string"
         }
       },
-      "required": ["key", "name"]
+      "required": ["name"],
+      "title": "Target table"
     }
   },
   "properties": {
@@ -128,10 +155,20 @@
       "title": "ID",
       "type": "string"
     },
-    "query": {
-      "description": "Query to populate the target table.",
-      "title": "Query",
-      "type": "string"
+    "lock": {
+      "default": false,
+      "description": "Whether to lock before refreshing target.",
+      "title": "Lock",
+      "type": "boolean"
+    },
+    "key": {
+      "default": null,
+      "description": "Key. If null, uses values from targetTable.",
+      "item": {
+        "$ref": "#/defintions/keyColumn"
+      },
+      "title": "Key",
+      "type": ["array", "null"]
     },
     "setup": {
       "$ref": "#/definitions/hook",
@@ -145,13 +182,6 @@
       "title": "Schema",
       "type": "string"
     },
-    "sync": {
-      "default": "full",
-      "description": "Synchronization mode. Insert inserts. Upsert inserts and updates. Full inserts, updates, and deletes.",
-      "enum": ["full", "insert", "upsert"],
-      "title": "Synchronization",
-      "type": "string"
-    },
     "tables": {
       "additionalProperties": {
         "$ref": "#/definitions/table"
@@ -160,11 +190,17 @@
       "title": "Tables",
       "type": "object"
     },
-    "target": {
-      "$ref": "#/definitions/target"
+    "targetQuery": {
+      "default": "TABLE $1",
+      "description": "Query to populate the target table.",
+      "title": "Query",
+      "type": ["string", "null"]
+    },
+    "targetTable": {
+      "$ref": "#/definitions/targetTable"
     }
   },
-  "required": ["id", "tables", "target"],
+  "required": ["id", "tables", "targetTable"],
   "title": "Join config",
   "type": "object"
 }

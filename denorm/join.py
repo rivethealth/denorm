@@ -32,6 +32,8 @@ Temp tables:
 import dataclasses
 import typing
 
+from pg_sql import SqlId, sql_list
+
 from .format import format
 from .formats.join import (
     JOIN_DATA_JSON_FORMAT,
@@ -41,9 +43,11 @@ from .formats.join import (
 )
 from .join_async import create_queue
 from .join_change import create_change
-from .join_common import Structure
-from .join_defer import create_refresh_function, create_setup_function
-from .join_query import ProcessQuery, create_lock_table
+from .join_common import JoinTarget, Key, Structure
+from .join_defer import DeferredKeys, create_refresh_function, create_setup_function
+from .join_key import KeyResolver, TargetRefresh
+from .join_lock import create_lock_table
+from .join_target_table import JoinTableTarget
 from .resource import ResourceFactory
 from .string import indent
 
@@ -62,64 +66,84 @@ def create_join(io: JoinIo):
             print(f"{statement};\n", file=f)
 
 
+def _target(config: JoinConfig) -> JoinTarget:
+    return JoinTableTarget(config.target_table, config.target_query)
+
+
 def _statements(config: JoinConfig):
     structure = Structure(config.schema, config.id)
 
-    yield from create_lock_table(structure=structure, target=config.target)
+    target = _target(config)
+    key = target.key()
+    if key is None:
+        definition = f"SELECT {sql_list(f'NULL::{column.type} AS {column.sql}' for column in config.key)}"
+        names = [column.name for column in config.key]
+        key = Key(definition=definition, names=names)
+
+    if config.lock:
+        yield from create_lock_table(
+            structure=structure, key=key, target=config.target_table
+        )
+
+    refresh_action = TargetRefresh(
+        key=key.names,
+        setup=config.setup,
+        structure=structure,
+        lock=config.lock,
+        target=target,
+    )
 
     if config.consistency == JoinConsistency.DEFERRED:
         yield from create_refresh_function(
             id=config.id,
             structure=structure,
-            query=config.query,
-            sync=config.sync,
-            target=config.target,
+            refresh=refresh_action,
         )
 
         yield from create_setup_function(
             structure=structure,
             id=config.id,
-            target=config.target,
+            target=config.target_table,
+            key=key,
         )
 
     for table_id, table in config.tables.items():
         if table.join_mode != JoinJoinMode.ASYNC:
             continue
 
-        process_query = ProcessQuery(
-            sync=config.sync,
-            tables=config.tables,
+        resolver = KeyResolver(
+            action=refresh_action,
+            key=key.names,
             structure=structure,
-            consistency=JoinConsistency.IMMEDIATE,
-            target=config.target,
-            setup=config.setup,
             table_id=table.join,
-            query=config.query,
+            tables=config.tables,
         )
 
         yield from create_queue(
             id=config.id,
-            process_query=process_query,
+            resolver=resolver,
             structure=structure,
             table_id=table_id,
             tables=config.tables,
         )
 
     for table_id, table in config.tables.items():
-        process_query = ProcessQuery(
-            consistency=config.consistency,
-            query=config.query,
-            setup=config.setup,
+        if config.consistency == JoinConsistency.DEFERRED:
+            action = DeferredKeys(key=key.names, structure=structure)
+        elif config.consistency == JoinConsistency.IMMEDIATE:
+            action = refresh_action
+
+        resolver = KeyResolver(
+            action=action,
+            key=key.names,
             structure=structure,
-            sync=config.sync,
             table_id=table_id,
             tables=config.tables,
-            target=config.target,
         )
 
         yield from create_change(
             id=config.id,
-            process_query=process_query,
+            resolver=resolver,
             structure=structure,
             table=table.sql,
             table_id=table_id,

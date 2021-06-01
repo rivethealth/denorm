@@ -40,13 +40,13 @@ _SCHEMA_JSON = {
             "schema": "public",
         },
     },
-    "target": {
+    "targetTable": {
         "key": ["id"],
         "columns": ["id", "parent_name"],
         "name": "child_full",
         "schema": "public",
     },
-    "query": """
+    "targetQuery": """
         SELECT c.id, p.name
         FROM $1 AS d
             JOIN child c ON d.id = c.id
@@ -72,6 +72,7 @@ def test_join_async(pg_database):
             ]
         )
         with connection("") as conn, transaction(conn) as cur:
+            # print(output.decode("utf-8"))
             cur.execute(output.decode("utf-8"))
 
         with connection("") as conn, transaction(conn) as cur:
@@ -88,8 +89,11 @@ def test_join_async(pg_database):
         with connection("") as conn:
             conn.autocommit = True
             with conn.cursor() as cur:
-                cur.execute("CALL test__pcs__parent(10)")
-                cur.execute("CALL test__pcs__parent(10)")
+                while True:
+                    cur.execute("SELECT test__pcs__parent(10)")
+                    (result,) = cur.fetchone()
+                    if not result:
+                        break
 
         with connection("") as conn, transaction(conn) as cur:
             cur.execute("SELECT * FROM child_full ORDER BY id")
@@ -110,7 +114,11 @@ def test_join_async(pg_database):
         with connection("") as conn:
             conn.autocommit = True
             with conn.cursor() as cur:
-                cur.execute("CALL test__pcs__parent(10)")
+                while True:
+                    cur.execute("SELECT test__pcs__parent(10)")
+                    (result,) = cur.fetchone()
+                    if not result:
+                        break
 
         with connection("") as conn, transaction(conn) as cur:
             cur.execute("TABLE test__que__parent")

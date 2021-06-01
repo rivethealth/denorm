@@ -2,8 +2,25 @@ import typing
 
 from pg_sql import SqlId, SqlNumber, SqlObject, sql_list
 
-from .sql import SqlQuery, SqlTableExpression, table_fields, update_excluded
+from .sql import SqlQuery, SqlTableExpr, table_fields, update_excluded
 from .string import indent
+
+
+def insert_query(
+    columns: typing.List[SqlId],
+    query: str,
+    target: SqlObject,
+    expressions: typing.Optional[str] = None,
+) -> SqlQuery:
+    """
+    Insert data
+    """
+    insert_query = f"""
+INSERT INTO {target} ({sql_list(columns)})
+{query}
+    """.strip()
+
+    return SqlQuery(insert_query)
 
 
 def sync_query(
@@ -13,6 +30,9 @@ def sync_query(
     query: str,
     target: SqlObject,
 ) -> SqlQuery:
+    """
+    Insert, update, and delete
+    """
     data_columns = [SqlId(column) for column in columns if column not in key]
 
     if target.names[0] != "pg_temp":
@@ -36,7 +56,7 @@ ON CONFLICT ({sql_list(key)}) DO UPDATE
 RETURNING {sql_list(key)}
         """.strip()
 
-    upsert_expression = SqlTableExpression(SqlId("_upsert"), upsert_query)
+    upsert_expression = SqlTableExpr(SqlId("_upsert"), upsert_query)
 
     delete_query = f"""
 DELETE FROM {target} AS t
@@ -55,8 +75,10 @@ def upsert_query(
     key: typing.List[SqlId],
     query: str,
     target: SqlObject,
-    expressions: typing.Optional[str] = None,
 ) -> SqlQuery:
+    """
+    Upsert data
+    """
     data_columns = [SqlId(column) for column in columns if column not in key]
 
     if target.names[0] != "pg_temp":

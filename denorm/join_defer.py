@@ -3,71 +3,36 @@ import typing
 from pg_sql import SqlId, SqlNumber, SqlObject, SqlString, sql_list
 
 from .format import format
-from .formats.join import JoinSync, JoinTarget
-from .join_common import Structure
-from .sql import update_excluded
+from .join_common import JoinTarget, Key, Structure
+from .join_key import KeyConsumer, TargetRefresh
+from .sql import SqlTableExpr
 from .sql_query import sync_query, upsert_query
 from .string import indent
 
 
 def create_refresh_function(
     id: str,
-    query: typing.Optional[str],
     structure: Structure,
-    sync: JoinSync,
-    target: JoinTarget,
+    refresh: TargetRefresh,
 ):
-    key = [SqlId(column) for column in target.key]
-    key_table = structure.key_table()
-    lock_table = structure.lock_table()
     refresh_function = structure.refresh_function()
     refresh_table = structure.refresh_table()
 
-    query = (
-        format(query, str(lock_table)) if query is not None else f"TABLE {lock_table}"
-    )
-
-    if sync == JoinSync.FULL:
-        update_query = sync_query(
-            columns=target.columns or target.key,
-            key=target.key,
-            key_table=lock_table,
-            query=query,
-            target=target.sql,
-        )
-    elif sync == JoinSync.UPSERT:
-        update_query = upsert_query(
-            columns=target.columns or target.key,
-            key=target.key,
-            query=query,
-            target=target.sql,
-        )
+    key_table = structure.key_table()
+    refresh_sql = refresh.sql(f"TABLE {key_table}")
 
     yield f"""
 CREATE FUNCTION {refresh_function} () RETURNS trigger
 LANGUAGE plpgsql AS $$
   BEGIN
+    -- analyze
+    ANALYZE {refresh_table};
+
+    -- refresh
+{indent(str(refresh_sql), 2)}
+
+    -- clear refresh
     DELETE FROM {refresh_table};
-
-    -- lock keys
-    WITH
-        _change AS (
-            DELETE FROM {key_table}
-            RETURNING *
-        )
-    INSERT INTO {lock_table} ({sql_list(key)})
-    SELECT *
-    FROM _change
-    ORDER BY {sql_list(SqlNumber(i + 1) for i, _ in enumerate(key))}
-    ON CONFLICT ({sql_list(key)}) DO UPDATE
-        SET {update_excluded(key)}
-        WHERE false;
-
-    -- update
-{indent(str(update_query), 2)};
-
-    -- clear locks
-    DELETE FROM {lock_table};
 
     RETURN NULL;
   END;
@@ -82,6 +47,7 @@ COMMENT ON FUNCTION {refresh_function} IS {SqlString(f'Refresh {id}')}
 def create_setup_function(
     structure: Structure,
     id: str,
+    key: Key,
     target: JoinTarget,
 ):
     key_table = structure.key_table()
@@ -89,8 +55,6 @@ def create_setup_function(
     refresh_function = structure.refresh_function()
     refresh_table = structure.refresh_table()
     setup_function = structure.setup_function()
-
-    key = [SqlId(column) for column in target.key]
 
     yield f"""
 CREATE FUNCTION {setup_function} () RETURNS void
@@ -101,12 +65,11 @@ LANGUAGE plpgsql AS $$
     END IF;
 
     CREATE TEMP TABLE {key_table}
-    AS SELECT {sql_list(key)}
-    FROM {target.sql}
+    AS {key.definition}
     WITH NO DATA;
 
     ALTER TABLE {key_table}
-      ADD PRIMARY KEY ({sql_list(key)});
+      ADD PRIMARY KEY ({sql_list([SqlId(name) for name in key.names])});
 
     CREATE TEMP TABLE {refresh_table} (
     ) ON COMMIT DELETE ROWS;
@@ -121,3 +84,40 @@ $$
     yield f"""
 COMMENT ON FUNCTION {setup_function} IS {SqlString(f"Set up temp tables for {id}")}
     """.strip()
+
+
+class DeferredKeys(KeyConsumer):
+    def __init__(self, key: typing.List[str], structure: Structure):
+        self._key = key
+        self._structure = structure
+
+    def sql(
+        self,
+        key_query: str,
+        exprs: typing.List[SqlTableExpr] = [],
+        last_expr: typing.Optional[str] = None,
+    ):
+        setup_function = self._structure.setup_function()
+
+        refresh_table = self._structure.refresh_table()
+
+        query = upsert_query(
+            columns=self._key,
+            key=self._key,
+            query=key_query,
+            target=self._structure.key_table(),
+        )
+        for expr in reversed(exprs):
+            query.prepend(expr)
+        if last_expr is not None:
+            query.append(SqlId("_other"), last_expr)
+
+        return f"""
+PERFORM {setup_function}();
+
+{query};
+
+INSERT INTO {refresh_table}
+SELECT
+WHERE NOT EXISTS (TABLE {refresh_table});
+        """.strip()
