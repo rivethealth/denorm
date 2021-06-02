@@ -2,7 +2,7 @@
 
 Join multiple tables.
 
-## Steps
+## Overview
 
 1. Create a target table that will hold the denormalized data.
 
@@ -15,7 +15,7 @@ Join multiple tables.
 4. Run the `denorm create-join` command to generate SQL DDL for triggers and
    functions.
 
-5. Apply generated SQL to the database.
+5. Apply the generated SQL to the database.
 
 Now the target table will be kept up-to-date whenever the relevant tables
 change.
@@ -52,6 +52,13 @@ Otherwise, it must reference another table,
 
 - `join` - Identify of the source to reference.
 - `joinOn` - Expression for an inner join on the two sources.
+
+## Lock
+
+Using upserts in `REPEATABLE READ` transactions and multi-table joins can be
+susceptible to ordering conditions.
+
+To prevent these, denorm can use a value lock table on the target key.
 
 ## Constistency
 
@@ -120,6 +127,8 @@ tables:
 
 </details>
 
+The state of the join is tracked in the table `book_full__que__genre`.
+
 #### Worker
 
 Updates will not automatically affect the target table. Instead, changes are
@@ -136,14 +145,14 @@ SELECT book_full__pcs__genre(1000);
 ```
 
 This function should be called periodically. Additionally workers can listen to
-the `public.book_full__chg__genre` listener.
+the `public.book_full__que__genre` listener.
 
 </details>
 
 ### Errors
 
 Errors in updating the target no longer fail the original transaction. Ensure
-that the query does not have errors, as this block asynchronous updates.
+that the query does not have errors, else they will halt asynchronous updates.
 
 ### Performance
 

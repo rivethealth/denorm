@@ -2,7 +2,7 @@
 
 Aggregate a single table.
 
-## Steps
+## Overview
 
 1. Create a target table that will hold the aggregated data.
 
@@ -13,7 +13,7 @@ Aggregate a single table.
 4. Run the `denorm create-agg` command to generate SQL DDL for triggers and
    functions.
 
-5. Apply generated SQL to the database.
+5. Apply the generated SQL to the database.
 
 Now the target table will be kept up-to-date whenever the relevant tables
 change.
