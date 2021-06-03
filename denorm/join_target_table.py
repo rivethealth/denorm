@@ -6,7 +6,7 @@ from .format import format
 from .formats.join import JoinRefresh, JoinTargetTable
 from .join_common import JoinTarget, Key
 from .sql import SqlQuery
-from .sql_query import sync_query, upsert_query
+from .sql_query import insert_query, sync_query, upsert_query
 
 
 class JoinTableTarget(JoinTarget):
