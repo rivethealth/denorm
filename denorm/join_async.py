@@ -88,10 +88,10 @@ ORDER BY k.* DESC
     """.strip()
 
     key1_query = f"""
-SELECT {table_fields(SqlId(dep), (SqlId(column) for column in foreign_table.key))}
+SELECT *
 FROM {foreign_table.sql} AS {SqlId(dep)}
 JOIN (VALUES ({table_fields(item, local_columns)})) AS {SqlId(table_id)} ({sql_list(SqlId(col) for col in table.key)})
-    ON {table.join_on}
+  ON {table.join_on}
 ORDER BY {sql_list(SqlNumber(i + 1) for i, _ in enumerate(foreign_table.key))}
 LIMIT max_records
     """.strip()
@@ -102,7 +102,7 @@ LIMIT max_records
     )
 
     key2_query = f"""
-SELECT {table_fields(SqlId(dep), (SqlId(column) for column in foreign_table.key))}
+SELECT *
 FROM {foreign_table.sql} AS {SqlId(dep)}
 JOIN (VALUES ({table_fields(item, local_columns)})) AS {SqlId(table_id)} ({sql_list(SqlId(col) for col in table.key)})
   ON {table.join_on}
