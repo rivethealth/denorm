@@ -59,6 +59,16 @@ ALTER TABLE {queue_table}
 COMMENT ON TABLE {queue_table} IS {SqlString(f"Asynchronous processing of changes to {table.sql}")}
     """.strip()
 
+    for column in table.key:
+        yield f"""
+COMMENT ON COLUMN {queue_table}.{local_column(column)} IS {SqlString(f"{table} key: {SqlId(column)}")}
+"""
+
+    for column in foreign_table.key:
+        yield f"""
+COMMENT ON COLUMN {queue_table}.{foreign_column(column)} IS {SqlString(f"{foreign_table} iterator: {SqlId(column)}")}
+"""
+
     yield f"""
 COMMENT ON COLUMN {queue_table}.seq IS 'Order to process'
     """.strip()
@@ -124,7 +134,7 @@ LANGUAGE plpgsql AS $$
     _item {queue_table};
     _new_item {queue_table};
   BEGIN
-    -- lock item
+    -- find item
     SELECT (q.*) INTO _item
     FROM {queue_table} AS q
     WHERE pg_try_advisory_xact_lock({lock_base} + q.lock)
@@ -132,21 +142,26 @@ LANGUAGE plpgsql AS $$
     LIMIT 1;
 
     IF _item IS NULL THEN
+      -- if no item found, exit
       RETURN false;
     END IF;
 
     IF ({table_fields(item, (foreign_column(column) for column in foreign_table.key))}) IS NULL THEN
+      -- if there is no iterator, start at the beginning
 {indent(gather1, 3)}
     ELSE
+      -- if there is an iterator, start at the iterator
 {indent(gather2, 3)}
     END IF;
 
     IF _new_item IS NULL THEN
+      -- if the iterator was at the end, remove the queue item
       DELETE FROM {queue_table} AS q
       WHERE
         ({table_fields(SqlId("q"), local_columns)}, q.seq)
           = ({table_fields(item, local_columns)}, _item.seq);
     ELSE
+      -- update the queue item with the new iterator
       UPDATE {queue_table} AS q
       SET {sql_list(f'{column} = (_new_item).{column}' for column in foreign_columns)}, seq = nextval(pg_get_serial_sequence({SqlString(str(queue_table))}, 'seq'))
       WHERE
@@ -154,6 +169,7 @@ LANGUAGE plpgsql AS $$
           = ({table_fields(item, local_columns)}, _item.seq);
     END IF;
 
+    -- notify listeners that the queue has been updated
     NOTIFY {SqlId(str(queue_table))};
 
     RETURN true;
