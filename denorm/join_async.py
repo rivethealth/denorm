@@ -61,12 +61,12 @@ COMMENT ON TABLE {queue_table} IS {SqlString(f"Asynchronous processing of change
 
     for column in table.key:
         yield f"""
-COMMENT ON COLUMN {queue_table}.{local_column(column)} IS {SqlString(f"{table} key: {SqlId(column)}")}
+COMMENT ON COLUMN {queue_table}.{local_column(column)} IS {SqlString(f"{table.sql} key: {SqlId(column)}")}
 """
 
     for column in foreign_table.key:
         yield f"""
-COMMENT ON COLUMN {queue_table}.{foreign_column(column)} IS {SqlString(f"{foreign_table} iterator: {SqlId(column)}")}
+COMMENT ON COLUMN {queue_table}.{foreign_column(column)} IS {SqlString(f"{foreign_table.sql} iterator: {SqlId(column)}")}
 """
 
     yield f"""
