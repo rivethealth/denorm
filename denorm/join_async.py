@@ -84,7 +84,7 @@ SELECT
   _item.lock
 INTO _new_item
 FROM {SqlObject(foreign_key_table)} AS k
-ORDER BY k.* DESC
+ORDER BY {table_fields(SqlId("k"), foreign_table.key)} DESC
     """.strip()
 
     key1_query = f"""
