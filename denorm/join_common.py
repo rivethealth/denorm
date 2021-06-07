@@ -68,11 +68,11 @@ class Structure:
 
 
 def local_column(column: str) -> str:
-    return SqlId(f"loc_{column}")
+    return SqlId(f"local_{column}")
 
 
 def foreign_column(column: str) -> str:
-    return SqlId(f"fgn_{column}")
+    return SqlId(f"foreign_{column}")
 
 
 class JoinTarget(typing.Protocol):
