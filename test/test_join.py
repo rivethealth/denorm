@@ -87,6 +87,14 @@ def test_join(pg_database):
             result = cur.fetchall()
             assert result == [(1, "A"), (2, "A"), (3, "B")]
 
+        with connection("") as conn, transaction(conn) as cur:
+            cur.execute("DELETE FROM child WHERE id = 2")
+
+        with connection("") as conn, transaction(conn) as cur:
+            cur.execute("SELECT * FROM child_full ORDER BY id")
+            result = cur.fetchall()
+            assert result == [(1, "A"), (3, "B")]
+
 
 def test_join_deferred(pg_database):
     with temp_file("denorm-") as schema_file:

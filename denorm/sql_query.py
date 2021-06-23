@@ -60,11 +60,11 @@ RETURNING {sql_list(key)}
 
     delete_query = f"""
 DELETE FROM {target} AS t
-USING _upsert AS u
-  LEFT JOIN {key_table} AS k ON ({table_fields(SqlId('u'), key)}) = ({table_fields(SqlId('k'), key)})
+USING {key_table} AS k
+  LEFT JOIN _upsert AS u ON ({table_fields(SqlId('k'), key)}) = ({table_fields(SqlId('u'), key)})
 WHERE
-  ({table_fields(SqlId('t'), key)}) = ({table_fields(SqlId('u'), key)})
-  AND k.* IS NOT DISTINCT FROM NULL
+  ({table_fields(SqlId('t'), key)}) = ({table_fields(SqlId('k'), key)})
+  AND u.* IS NOT DISTINCT FROM NULL
     """.strip()
 
     return SqlQuery(delete_query, expressions=[upsert_expression])
