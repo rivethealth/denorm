@@ -80,8 +80,9 @@ def upsert_query(
     Upsert data
     """
     data_columns = [SqlId(column) for column in columns if column not in key]
+    is_temp = target.names[0].name == "pg_temp"
 
-    if target.names[0] != "pg_temp":
+    if not is_temp:
         query += f"\nORDER BY {sql_list(SqlNumber(i + 1) for i, _ in enumerate(key))}"
 
     if data_columns:
@@ -91,7 +92,7 @@ INSERT INTO {target} ({sql_list(columns)})
 ON CONFLICT ({sql_list(key)}) DO UPDATE
     SET {update_excluded(data_columns)}
         """.strip()
-    else:
+    elif not is_temp:
         upsert_query = f"""
 INSERT INTO {target} ({sql_list(columns)})
 {query}
@@ -99,5 +100,11 @@ ON CONFLICT ({sql_list(key)}) DO UPDATE
     SET {update_excluded(key)}
     WHERE false
         """.strip()
+    else:
+        upsert_query = f"""
+INSERT INTO {target} ({sql_list(columns)})
+ON CONFLICT DO NOTHING
+{query}
+"""
 
     return SqlQuery(upsert_query)
