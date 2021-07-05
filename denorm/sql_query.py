@@ -34,8 +34,9 @@ def sync_query(
     Insert, update, and delete
     """
     data_columns = [SqlId(column) for column in columns if column not in key]
+    is_temp = target.names[0].name == "pg_temp"
 
-    if target.names[0] != "pg_temp":
+    if not is_temp:
         query += f"\nORDER BY {sql_list(SqlNumber(i + 1) for i, _ in enumerate(key))}"
 
     if data_columns:
@@ -46,7 +47,7 @@ ON CONFLICT ({sql_list(key)}) DO UPDATE
     SET {update_excluded(data_columns)}
 RETURNING {sql_list(key)}
         """.strip()
-    else:
+    elif not is_temp:
         upsert_query = f"""
 INSERT INTO {target} ({sql_list(columns)})
 {query}
@@ -55,7 +56,12 @@ ON CONFLICT ({sql_list(key)}) DO UPDATE
     WHERE false
 RETURNING {sql_list(key)}
         """.strip()
-
+    else:
+        upsert_query = f"""
+INSERT INTO {target} ({sql_list(columns)})
+{query}
+ON CONFLICT ({sql_list(key)}) DO NOTHING
+"""
     upsert_expression = SqlTableExpr(SqlId("_upsert"), upsert_query)
 
     delete_query = f"""
@@ -103,8 +109,8 @@ ON CONFLICT ({sql_list(key)}) DO UPDATE
     else:
         upsert_query = f"""
 INSERT INTO {target} ({sql_list(columns)})
-ON CONFLICT DO NOTHING
 {query}
+ON CONFLICT ({sql_list(key)}) DO NOTHING
 """
 
     return SqlQuery(upsert_query)
