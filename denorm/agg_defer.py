@@ -74,6 +74,7 @@ LANGUAGE plpgsql AS $$
     END IF;
 
     CREATE TEMP TABLE {tmp_table}
+    ON COMMIT DELETE ROWS
     AS SELECT
       {sql_list(group_columns)},
       {sql_list(aggregate_columns)}

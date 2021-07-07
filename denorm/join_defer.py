@@ -65,6 +65,7 @@ LANGUAGE plpgsql AS $$
     END IF;
 
     CREATE TEMP TABLE {key_table}
+    ON COMMIT DELETE ROWS
     AS {key.definition}
     WITH NO DATA;
 
