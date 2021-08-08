@@ -31,13 +31,13 @@ def create_queue(
     queue_table = structure.queue_table(table_id)
 
     local_columns = [local_column(column) for column in table.key]
-    foreign_columns = [foreign_column(column) for column in foreign_table.key]
+    foreign_columns = [foreign_column(column) for column in table.join_key]
 
     yield f"""
 CREATE TABLE {queue_table}
 AS SELECT
   {sql_list(f"{SqlObject(SqlId('l'), SqlId(column))} AS {local_column(column)}" for column in table.key)},
-  {sql_list(f"{SqlObject(SqlId('f'), SqlId(column))} AS {foreign_column(column)}" for column in foreign_table.key)},
+  {sql_list(f"{SqlObject(SqlId('f'), SqlId(column))} AS {foreign_column(column)}" for column in table.join_key)},
   NULL::bigint AS seq,
   NULL::bigint AS lock
 FROM
@@ -64,7 +64,7 @@ COMMENT ON TABLE {queue_table} IS {SqlString(f"Asynchronous processing of change
 COMMENT ON COLUMN {queue_table}.{local_column(column)} IS {SqlString(f"{table.sql} key: {SqlId(column)}")}
 """
 
-    for column in foreign_table.key:
+    for column in table.join_key:
         yield f"""
 COMMENT ON COLUMN {queue_table}.{foreign_column(column)} IS {SqlString(f"{foreign_table.sql} iterator: {SqlId(column)}")}
 """
@@ -89,12 +89,12 @@ CREATE INDEX ON {queue_table} (seq)
     get_item = f"""
 SELECT
   {table_fields(item, local_columns)},
-  {table_fields(SqlId("k"), [SqlId(column) for column in foreign_table.key])},
+  {table_fields(SqlId("k"), [SqlId(column) for column in table.join_key])},
   _item.seq,
   _item.lock
 INTO _new_item
 FROM {SqlObject(foreign_key_table)} AS k
-ORDER BY {table_fields(SqlId("k"), foreign_table.key)} DESC
+ORDER BY {table_fields(SqlId("k"), table.join_key)} DESC
     """.strip()
 
     key1_query = f"""
@@ -102,7 +102,7 @@ SELECT {SqlId(dep)}.*
 FROM {foreign_table.sql} AS {SqlId(dep)}
 JOIN (VALUES ({table_fields(item, local_columns)})) AS {SqlId(table_id)} ({sql_list(SqlId(col) for col in table.key)})
   ON {table.join_on}
-ORDER BY {sql_list(SqlObject(SqlId(dep), SqlId(name)) for name in foreign_table.key)}
+ORDER BY {sql_list(SqlObject(SqlId(dep), SqlId(name)) for name in table.join_key)}
 LIMIT max_records
     """.strip()
     gather1 = resolver.sql(
@@ -116,8 +116,8 @@ SELECT {SqlId(dep)}.*
 FROM {foreign_table.sql} AS {SqlId(dep)}
 JOIN (VALUES ({table_fields(item, local_columns)})) AS {SqlId(table_id)} ({sql_list(SqlId(col) for col in table.key)})
   ON {table.join_on}
-WHERE ({table_fields(item, foreign_columns)}) < ({table_fields(SqlId(dep), (SqlId(column) for column in foreign_table.key))})
-ORDER BY {sql_list(SqlObject(SqlId(dep), SqlId(name)) for name in foreign_table.key)}
+WHERE ({table_fields(item, foreign_columns)}) < ({table_fields(SqlId(dep), (SqlId(column) for column in table.join_key))})
+ORDER BY {sql_list(SqlObject(SqlId(dep), SqlId(name)) for name in table.join_key)}
 LIMIT max_records
     """.strip()
     gather2 = resolver.sql(
@@ -146,7 +146,7 @@ LANGUAGE plpgsql AS $$
       RETURN false;
     END IF;
 
-    IF ({table_fields(item, (foreign_column(column) for column in foreign_table.key))}) IS NULL THEN
+    IF ({table_fields(item, (foreign_column(column) for column in table.join_key))}) IS NULL THEN
       -- if there is no iterator, start at the beginning
 {indent(gather1, 3)}
     ELSE
@@ -185,7 +185,6 @@ COMMENT ON FUNCTION {process_function} IS {SqlString(f"Refresh for {queue_table}
 def enqueue_sql(
     id: str,
     table: JoinTable,
-    foreign: JoinTable,
     structure: Structure,
     key_query: str,
     exprs: typing.List[SqlTableExpr],
@@ -200,7 +199,7 @@ INSERT INTO {queue_table} ({sql_list(local_columns)})
 {key_query}
 ORDER BY {sql_list(SqlNumber(i + 1) for i, _ in enumerate(table.key))}
 ON CONFLICT ({sql_list(local_columns)}) DO UPDATE
-  SET {update_excluded(foreign_column(column) for column in foreign.key)},
+  SET {update_excluded(foreign_column(column) for column in table.join_key)},
     seq = excluded.seq
     """.strip()
     query = SqlQuery(insert, expressions=exprs)

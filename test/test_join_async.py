@@ -26,15 +26,15 @@ _SCHEMA_JSON = {
     "id": "test",
     "tables": {
         "child": {
-            "key": ["id"],
             "name": "child",
             "schema": "public",
             "targetKey": ["child.id"],
         },
         "parent": {
             "join": "child",
-            "joinOn": "parent.id = child.parent_id",
+            "joinKey": ["id"],
             "joinMode": "async",
+            "joinOn": "parent.id = child.parent_id",
             "key": ["id"],
             "name": "parent",
             "schema": "public",

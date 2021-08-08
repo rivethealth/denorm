@@ -53,6 +53,7 @@ class JoinTargetTable:
 class JoinTable:
     name: str
     join: typing.Optional[str] = None
+    join_key: typing.Optional[typing.List[str]] = None
     join_on: typing.Optional[str] = None
     join_mode: JoinJoinMode = JoinJoinMode.SYNC
     join_other: typing.Optional[str] = None

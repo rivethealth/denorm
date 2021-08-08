@@ -57,6 +57,15 @@
           "title": "Join dependency",
           "type": ["string", "null"]
         },
+        "joinKey": {
+          "default": null,
+          "description": "Unique key for foreign table.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Join key",
+          "type": ["array", "null"]
+        },
         "joinOn": {
           "default": null,
           "description": "SQL expression to join to dependency.",
@@ -77,7 +86,7 @@
             "type": "string"
           },
           "title": "key",
-          "type": "array"
+          "type": ["array", "null"]
         },
         "name": {
           "description": "Name of table",

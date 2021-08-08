@@ -91,7 +91,9 @@ If tables have an 1:N relationship with a very large N — say, tens of thousand
 — it may not be feasible to process all records a single transaction. Denorm
 allows the join to be broken up over multiple transactions.
 
-Both the table and the dependency table must have a defined unique key.
+Use `key` to indicate a unique key on the table, and `joinKey` to indicate a
+unique key on the foreign table. These are used to track the iteration state.
+(See comments in Performance section).
 
 Building on the book example, suppose each book had a genre, and the genre's
 name is to be included in the target table. A genre may have hundreds of
@@ -118,9 +120,11 @@ tables:
     schema: public
     targetKey: [book_author.book_id]
   genre:
-    join: book.genre_id = genre.id
-    joinDep: book
-    joinMode: iterate
+    join: book
+    joinMode: async
+    joinOn: book.genre_id = genre.id
+    joinKey: [id]
+    key: [id]
     name: genre
     schema: public
 ```
@@ -165,5 +169,6 @@ In the earlier example,
 CREATE INDEX ON book (genre_id, id);
 ```
 
-Take careful note of this requirement, as indices do not usually include the
-unique key of the table.
+Take careful note of this requirement, as such indices do not usually include
+the second part (a unique key on the table itself). However, this is essential
+for good performance.

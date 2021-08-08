@@ -1,4 +1,4 @@
-# Join
+# Aggregate
 
 Aggregate a single table.
 

@@ -33,11 +33,14 @@ _Configuration for joining tables._
     queueing. If null, it is generated from the ID and table ID. Minimum:
     `-32678`. Maximum: `32677`. Default: `None`.
   - **`join`** _(['string', 'null'])_: IDs of dependency table. Default: `None`.
+  - **`joinKey`** _(['array', 'null'])_: Unique key for foreign table. Default:
+    `None`.
+    - **Items** _(string)_
   - **`joinOn`** _(['string', 'null'])_: SQL expression to join to dependency.
     Default: `None`.
   - **`joinMode`** _(['string', 'null'])_: Mode of dependency join. Must be one
     of: `['async', 'sync']`. Default: `sync`.
-  - **`key`** _(array)_: Unique key. Default: `None`.
+  - **`key`** _(['array', 'null'])_: Unique key. Default: `None`.
     - **Items** _(string)_
   - **`name`** _(string)_: Name of table.
   - **`targetKey`** _(['array', 'null'])_: SQL expressions for target key

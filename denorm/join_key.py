@@ -119,12 +119,6 @@ class KeyResolver:
         exprs: typing.List[SqlTableExpr] = [],
         last_expr: typing.Optional[str] = None,
     ) -> str:
-        _, last_table = self._deps[0]
-        if last_table.join is not None:
-            foreign = self._tables[last_table.join]
-        else:
-            foreign = None
-
         key_query = ""
         for i, (dep_id, dep) in enumerate(self._deps):
             table_sql = root if i == len(self._deps) - 1 else str(dep.sql)
@@ -152,7 +146,6 @@ class KeyResolver:
             return enqueue_sql(
                 id=last_id,
                 table=last_table,
-                foreign=foreign,
                 structure=self._structure,
                 key_query=key_query,
                 exprs=exprs,
