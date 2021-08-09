@@ -39,7 +39,6 @@
     "table": {
       "description": "Table",
       "dependencies": {
-        "join": ["joinOn"],
         "joinOn": ["join"]
       },
       "properties": {
@@ -103,7 +102,6 @@
           "type": ["array", "null"]
         }
       },
-      "required": ["name"],
       "type": "object",
       "title": "Table"
     },

@@ -47,6 +47,9 @@ from .join_common import JoinTarget, Key, Structure
 from .join_defer import DeferredKeys, create_refresh_function, create_setup_function
 from .join_key import KeyResolver, TargetRefresh
 from .join_lock import create_lock_table
+from .join_refresh_function import (
+    create_refresh_function as create_table_refresh_function,
+)
 from .join_target_table import JoinTableTarget
 from .resource import ResourceFactory
 from .string import indent
@@ -127,7 +130,17 @@ def _statements(config: JoinConfig):
             tables=config.tables,
         )
 
+        if table.key is None:
+            yield from create_table_refresh_function(
+                structure=structure,
+                table=table,
+                table_id=table_id,
+            )
+
     for table_id, table in config.tables.items():
+        if table.name is None:
+            continue
+
         if config.consistency == JoinConsistency.DEFERRED:
             action = DeferredKeys(key=key.names, structure=structure)
         elif config.consistency == JoinConsistency.IMMEDIATE:

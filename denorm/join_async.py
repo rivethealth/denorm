@@ -30,13 +30,13 @@ def create_queue(
 
     queue_table = structure.queue_table(table_id)
 
-    local_columns = [local_column(column) for column in table.key]
+    local_columns = [local_column(column) for column in (table.key or ["_"])]
     foreign_columns = [foreign_column(column) for column in table.join_key]
 
     yield f"""
 CREATE TABLE {queue_table}
 AS SELECT
-  {sql_list(f"{SqlObject(SqlId('l'), SqlId(column))} AS {local_column(column)}" for column in table.key)},
+  {sql_list(f"{SqlObject(SqlId('l'), SqlId(column))} AS {local_column(column)}" for column in (table.key or ["_"]))},
   {sql_list(f"{SqlObject(SqlId('f'), SqlId(column))} AS {foreign_column(column)}" for column in table.join_key)},
   NULL::bigint AS seq,
   NULL::bigint AS lock
@@ -59,7 +59,7 @@ ALTER TABLE {queue_table}
 COMMENT ON TABLE {queue_table} IS {SqlString(f"Asynchronous processing of changes to {table.sql}")}
     """.strip()
 
-    for column in table.key:
+    for column in table.key or ["_"]:
         yield f"""
 COMMENT ON COLUMN {queue_table}.{local_column(column)} IS {SqlString(f"{table.sql} key: {SqlId(column)}")}
 """
@@ -97,11 +97,18 @@ FROM {SqlObject(foreign_key_table)} AS k
 ORDER BY {table_fields(SqlId("k"), table.join_key)} DESC
     """.strip()
 
+    if table.join_on is not None:
+        join = f"""
+JOIN (VALUES ({table_fields(item, local_columns)})) AS {SqlId(table_id)} ({sql_list(SqlId(col) for col in table.key)})
+ON {table.join_on}
+        """.strip()
+    else:
+        join = ""
+
     key1_query = f"""
 SELECT {SqlId(dep)}.*
 FROM {foreign_table.sql} AS {SqlId(dep)}
-JOIN (VALUES ({table_fields(item, local_columns)})) AS {SqlId(table_id)} ({sql_list(SqlId(col) for col in table.key)})
-  ON {table.join_on}
+{join}
 ORDER BY {sql_list(SqlObject(SqlId(dep), SqlId(name)) for name in table.join_key)}
 LIMIT max_records
     """.strip()
@@ -114,8 +121,7 @@ LIMIT max_records
     key2_query = f"""
 SELECT {SqlId(dep)}.*
 FROM {foreign_table.sql} AS {SqlId(dep)}
-JOIN (VALUES ({table_fields(item, local_columns)})) AS {SqlId(table_id)} ({sql_list(SqlId(col) for col in table.key)})
-  ON {table.join_on}
+{join}
 WHERE ({table_fields(item, foreign_columns)}) < ({table_fields(SqlId(dep), (SqlId(column) for column in table.join_key))})
 ORDER BY {sql_list(SqlObject(SqlId(dep), SqlId(name)) for name in table.join_key)}
 LIMIT max_records
@@ -192,12 +198,19 @@ def enqueue_sql(
 ):
     queue_table = structure.queue_table(id)
 
-    local_columns = [local_column(column) for column in table.key]
+    local_columns = [local_column(column) for column in (table.key or ["_"])]
+
+    if table.key:
+        order = (
+            f"ORDER BY {sql_list(SqlNumber(i + 1) for i, _ in enumerate(table.key))}"
+        )
+    else:
+        order = ""
 
     insert = f"""
 INSERT INTO {queue_table} ({sql_list(local_columns)})
 {key_query}
-ORDER BY {sql_list(SqlNumber(i + 1) for i, _ in enumerate(table.key))}
+{order}
 ON CONFLICT ({sql_list(local_columns)}) DO UPDATE
   SET {update_excluded(foreign_column(column) for column in table.join_key)},
     seq = excluded.seq

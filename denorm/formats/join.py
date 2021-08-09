@@ -51,7 +51,7 @@ class JoinTargetTable:
 )
 @dataclasses.dataclass
 class JoinTable:
-    name: str
+    name: typing.Optional[str] = None
     join: typing.Optional[str] = None
     join_key: typing.Optional[typing.List[str]] = None
     join_on: typing.Optional[str] = None
@@ -70,6 +70,9 @@ class JoinTable:
 
     @property
     def sql(self) -> SqlObject:
+        if self.name is None:
+            return "(SELECT false AS _)"
+
         return (
             SqlObject(SqlId(self.schema), SqlId(self.name))
             if self.schema is not None

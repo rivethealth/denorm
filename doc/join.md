@@ -172,3 +172,42 @@ CREATE INDEX ON book (genre_id, id);
 Take careful note of this requirement, as such indices do not usually include
 the second part (a unique key on the table itself). However, this is essential
 for good performance.
+
+## Backfill
+
+The previous can be leveraged to create an asynchronous fill of the entire
+table.
+
+Add a tables entry with `join`, `joinMode: async`, and `joinKey`.
+
+<details>
+<summary>book_full.yml</summary>
+
+```yml
+tables:
+  all:
+    join: book
+    joinMode: async
+    joinKey: [id]
+  author:
+    join: book_author
+    joinOn: author.id = book_author.author_id
+    name: author
+  book:
+    name: book
+    targetKey: [book.id]
+  book_author:
+    name: book_author
+    targetKey: [book_author.book_id]
+    name: book_author
+```
+
+</details>
+
+Then run
+
+```sql
+SELECT test__rfs__all();
+```
+
+and after successive `test__pcs__all()`, the table will be backfilled/refreshed.

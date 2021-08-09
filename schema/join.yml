@@ -30,7 +30,6 @@ definitions:
   table:
     description: Table
     dependencies:
-      join: [joinOn]
       joinOn: [join]
     properties:
       lockId:
@@ -80,7 +79,6 @@ definitions:
         items: { type: string }
         title: key
         type: [array, "null"]
-    required: [name]
     type: object
     title: Table
   targetTable:

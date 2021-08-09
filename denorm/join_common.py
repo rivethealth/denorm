@@ -63,6 +63,9 @@ class Structure:
     def refresh_table(self) -> SqlObject:
         return SqlObject(SqlId("pg_temp"), self._name("refresh"))
 
+    def refresh_table_function(self, table_id: str) -> SqlId:
+        return self._sql_object(self._name(f"rfs__{table_id}"))
+
     def setup_function(self) -> SqlObject:
         return self._sql_object(self._name("setup"))
 
