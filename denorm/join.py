@@ -47,10 +47,11 @@ from .join_common import JoinTarget, Key, Structure
 from .join_defer import DeferredKeys, create_refresh_function, create_setup_function
 from .join_key import KeyResolver, TargetRefresh
 from .join_lock import create_lock_table
+from .join_plain_target import JoinPlainTarget
 from .join_refresh_function import (
     create_refresh_function as create_table_refresh_function,
 )
-from .join_target_table import JoinTableTarget
+from .join_table_target import JoinTableTarget
 from .resource import ResourceFactory
 from .string import indent
 
@@ -70,7 +71,10 @@ def create_join(io: JoinIo):
 
 
 def _target(config: JoinConfig) -> JoinTarget:
-    return JoinTableTarget(config.target_table, config.target_query)
+    if config.target_table:
+        return JoinTableTarget(config.target_table, config.target_query)
+    else:
+        return JoinPlainTarget(config.target_query)
 
 
 def _statements(config: JoinConfig):

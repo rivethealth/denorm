@@ -40,6 +40,9 @@ created in the default schema.
 The target table must have a primary key. It may have columns not populated by
 the query.
 
+`key` will be inferred automatically from `targetTable`. If `targetTable` is not
+present, the `targetQuery` itself should perform the update.
+
 ## Tables
 
 Tables are the source tables from which changes will be propogated.

@@ -172,7 +172,7 @@
       "default": null,
       "description": "Key. If null, uses values from targetTable.",
       "item": {
-        "$ref": "#/defintions/keyColumn"
+        "$ref": "#/definitions/column"
       },
       "title": "Key",
       "type": ["array", "null"]
@@ -207,7 +207,7 @@
       "$ref": "#/definitions/targetTable"
     }
   },
-  "required": ["id", "tables", "targetTable"],
+  "required": ["id", "tables"],
   "title": "Join config",
   "type": "object"
 }

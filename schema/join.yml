@@ -135,7 +135,7 @@ properties:
   key:
     default: null
     description: Key. If null, uses values from targetTable.
-    item: { $ref: "#/defintions/keyColumn" }
+    item: { $ref: "#/definitions/column" }
     title: Key
     type: [array, "null"]
   setup:
@@ -160,6 +160,6 @@ properties:
     title: Query
     type: [string, "null"]
   targetTable: { $ref: "#/definitions/targetTable" }
-required: [id, tables, targetTable]
+required: [id, tables]
 title: Join config
 type: object

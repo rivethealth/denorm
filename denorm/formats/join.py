@@ -120,7 +120,7 @@ class JoinKeyColumn:
 class JoinConfig:
     id: str
     tables: typing.Dict[str, JoinTable]
-    target_table: JoinTargetTable
+    target_table: typing.Optional[JoinTargetTable] = None
     key: typing.Optional[typing.List[JoinKeyColumn]] = None
     lock: bool = False
     consistency: JoinConsistency = JoinConsistency.IMMEDIATE
