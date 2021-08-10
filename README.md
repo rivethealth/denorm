@@ -10,6 +10,7 @@ maintenance, materialized view
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
+- [Overview](#overview)
 - [Install](#install)
 - [Features](#features)
 - [Usage](#usage)
@@ -20,13 +21,17 @@ maintenance, materialized view
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-## Install
+## Overview
 
-### Pip
+Denorm uses schema defined in JSON. It generates SQL DDL statements for
+functions and triggers. When these SQL stateements are applied to the database,
+the triggers keep the target table up-to-date with the sources.
 
-```
-pip3 install denorm
-```
+By using declarative JSON files about table relationships and calculations,
+aggregated and denormalized tables can be easily maintained.
+
+Denorm is similar to PostgreSQL's `CREATE MATERIALIZED VIEW`, except that denorm
+updates the materialized view incrementally.
 
 ## Features
 
@@ -35,51 +40,33 @@ pip3 install denorm
 - Configurable consistency
 - Deadlock-free
 
+## Install
+
+### Pip
+
+```
+pip3 install denorm
+```
+
 ## Usage
 
-For usage, see [Usage](doc/usage.md).
+For CLI usage, see [Usage](doc/usage.md).
 
 ## Operations
 
-Denorm has two modes of operation:
+Denorm has two operations:
 
 ### Aggregate
 
 Create a materalized aggregate of a single table.
 
-For documentation, see [Aggregate](doc/agg.md).
-
-Example query:
-
-```sql
-SELECT author_id, count(*) AS book_count
-FROM book_author
-GROUP BY 1
-```
+See [Aggregate](doc/agg.md).
 
 ### Join
 
 Create a materialized join of several tables.
 
-For documentation, see [Join](doc/join.md).
-
-Example query:
-
-```sql
-SELECT
-  b.id,
-  b.title,
-  a.names
-FROM
-  book AS b
-  CROSS JOIN LATERAL (
-    SELECT coalesce(array_agg(a.name ORDER BY ba.ordinal), '{}') AS names
-    FROM
-      author AS a
-      JOIN book_author AS ba ON a.id = ba.author_id
-    WHERE b.id = ba.book_id
-  ) AS a
-```
+See [Join](doc/join.md).
 
 ## Performance
 
