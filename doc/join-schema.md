@@ -42,14 +42,17 @@ _Configuration for joining tables._
     of: `['async', 'sync']`. Default: `sync`.
   - **`key`** _(['array', 'null'])_: Unique key. Default: `None`.
     - **Items** _(string)_
+  - **`keyType`** _(['array', 'null'])_: Key column types. Default: `None`.
+    - **Items** _(string)_
   - **`name`** _(string)_: Name of table.
+  - **`refreshFunction`** _(['boolean'])_: Default: `False`.
   - **`targetKey`** _(['array', 'null'])_: SQL expressions for target key
     values. Default: `None`.
     - **Items** _(string)_
 - **`targetTable`**: Target table.
   - **`columns`** _(['array', 'null'])_: Columns. Default: `None`.
     - **Items** _(string)_
-  - **`key`** _(array)_: Key columns. Default: `None`.
+  - **`key`** _(['array', 'null'])_: Key columns. Default: `None`.
     - **Items** _(string)_
   - **`refresh`** _(string)_: Insert inserts. Full inserts, updates, and
     deletes. Insert only inserts. Upsert inserts and updates. Must be one of:

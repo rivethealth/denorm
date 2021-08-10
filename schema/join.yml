@@ -69,10 +69,19 @@ definitions:
         items: { type: string }
         title: key
         type: [array, "null"]
+      keyType:
+        default: null
+        description: Key column types
+        items: { type: string }
+        title: Key type
+        type: [array, "null"]
       name:
         description: Name of table
         title: Name
         type: string
+      refreshFunction:
+        default: false
+        type: [boolean]
       targetKey:
         default: null
         description: SQL expressions for target key values.
@@ -95,7 +104,7 @@ definitions:
         description: Key columns
         items: { type: string }
         title: Key
-        type: array
+        type: [array, "null"]
       refresh:
         default: full
         description:

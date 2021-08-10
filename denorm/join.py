@@ -134,7 +134,7 @@ def _statements(config: JoinConfig):
             tables=config.tables,
         )
 
-        if table.key is None:
+        if table.refresh_function:
             yield from create_table_refresh_function(
                 structure=structure,
                 table=table,

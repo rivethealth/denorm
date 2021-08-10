@@ -58,6 +58,8 @@ class JoinTable:
     join_mode: JoinJoinMode = JoinJoinMode.SYNC
     join_other: typing.Optional[str] = None
     key: typing.Optional[typing.List[str]] = None
+    key_type: typing.Optional[typing.List[str]] = None
+    refresh_function: bool = False
     lock_id: typing.Optional[int] = None
     schema: typing.Optional[str] = None
     target_key: typing.Optional[typing.List[str]] = None
