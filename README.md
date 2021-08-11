@@ -2,6 +2,10 @@
 
 [![PyPI](https://img.shields.io/pypi/v/denorm)](https://pypi.org/project/denorm/)
 
+<p align="center">
+  <img src="doc/logo.png">
+</p>
+
 Denormalized and aggregated tables for PostgreSQL.
 
 Keywords: PostgreSQL, denormalization, aggregation, incremental view
@@ -11,8 +15,8 @@ maintenance, materialized view
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [Overview](#overview)
-- [Install](#install)
 - [Features](#features)
+- [Install](#install)
 - [Usage](#usage)
 - [Operations](#operations)
 - [Performance](#performance)
