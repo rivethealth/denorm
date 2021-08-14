@@ -107,7 +107,7 @@ class KeyResolver:
 
         dep_ids = closure(
             [table_id],
-            lambda id: [tables[id].join] or []
+            lambda id: [tables[id].join]
             if tables[id].join_mode == JoinJoinMode.SYNC and tables[id].join
             else [],
         )
@@ -120,7 +120,7 @@ class KeyResolver:
         last_expr: typing.Optional[str] = None,
     ) -> str:
         key_query = ""
-        for i, (dep_id, dep) in enumerate(self._deps):
+        for i, (dep_id, dep) in enumerate(reversed(self._deps)):
             table_sql = root if i == len(self._deps) - 1 else str(dep.sql)
 
             if dep.target_key is not None:

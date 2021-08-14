@@ -21,13 +21,13 @@ def closure(start: typing.List[T], fn: typing.Callable[[T], typing.List[T]]):
         if item in visited:
             return
 
+        yield item
+
         chain.append(item)
         visited.add(item)
         for dep in fn(item):
             yield from visit(dep)
         chain.pop()
-
-        yield item
 
     for item in start:
         yield from visit(item)
