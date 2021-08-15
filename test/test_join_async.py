@@ -39,7 +39,7 @@ _SCHEMA_JSON = {
         "grandparent": {
             "join": "parent",
             "joinOn": "grandparent.id = parent.grandparent_id",
-            "name": "grandparent"
+            "name": "grandparent",
         },
         "parent": {
             "join": "child",
@@ -47,7 +47,7 @@ _SCHEMA_JSON = {
             "joinMode": "async",
             "joinOn": "parent.id = child.parent_id",
             "key": ["id"],
-            "name": "parent"
+            "name": "parent",
         },
     },
     "targetTable": {
