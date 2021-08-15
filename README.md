@@ -15,7 +15,6 @@ maintenance, materialized view
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [Overview](#overview)
-- [Features](#features)
 - [Install](#install)
 - [Usage](#usage)
 - [Operations](#operations)
@@ -27,17 +26,16 @@ maintenance, materialized view
 
 ## Overview
 
-Denorm uses schema defined in JSON. It generates SQL DDL statements for
-functions and triggers. When these SQL stateements are applied to the database,
-the triggers keep the target table up-to-date with the sources.
+Dernom is similar to PostgreSQL's
+[`REFRESH MATERIALIZED VIEW`](https://www.postgresql.org/docs/13/sql-refreshmaterializedview.html),
+except that it updates materialized table incrementally.
 
-By using declarative JSON files about table relationships and calculations,
-aggregated and denormalized tables can be easily maintained.
+How it works: Define the query, the tables, and their relationships in JSON.
+Denorm will generate the SQL DDL statements that create the necessary functions
+and triggers. Apply those SQL statements to the database. Now any updates to the
+source tables are automatically reflected in the materialized target.
 
-Denorm is similar to PostgreSQL's `CREATE MATERIALIZED VIEW`, except that denorm
-updates the materialized view incrementally.
-
-## Features
+### Features
 
 - Efficient incremental updates
 - Arbitrarily complex SQL features and expressions
@@ -77,15 +75,17 @@ See [Join](doc/join.md).
 Materialized views exchange slower write performance for higher read
 performance.
 
-While it's impossible to completely escape that fundamental trade-off, Denorm is
-implementated to be on par with hand-tuned methods, especially for batch
-updates.
+While it's impossible to escape the fundamental trade-off, Denorm is as fast or
+faster than hand-written triggers. It uses statement-level transitions tables to
+make batch updates especially efficient.
 
-When applicable, Denorm uses tables with `ON COMMIT DELETE` to minimize I/O
-overhead. However, since PostgreSQL does not support global temporary tables,
-Denorm must use session temp tables. Thus the first update in a session may have
-several millseconds of overhead in creating these tables. Be sure to pool
-connections and vacuum reguarly to prevent system tables from bloating.
+In deferred mode, Denorm uses temp tables to defer updates until the end of the
+transaction. Using temp tables and `ON DELETE COMMIT` reduces I/O overhead and
+obviates the need for vacuuming. Since PostgreSQL does not support global
+temporary tables, the tables are created as necessary for each session. Thus the
+first saliant update in a session may have several millseconds of overhead as
+the trigger creates the temporary tables. Pool connections to reduce overhead,
+and vacuum reguarly to prevent system tables from bloating.
 
 ## Migration
 
