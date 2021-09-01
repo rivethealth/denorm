@@ -31,9 +31,9 @@ Dernom is similar to PostgreSQL's
 except that it updates materialized table incrementally.
 
 How it works: Define the query, the tables, and their relationships in JSON.
-Denorm will generate the SQL DDL statements that create the necessary functions
-and triggers. Apply those SQL statements to the database. Now any updates to the
-source tables are automatically reflected in the materialized target.
+Denorm generates the SQL DDL statements that create the necessary functions and
+triggers. Apply the generated SQL statements to the database. Now, the
+materialized target is automatically kept in sync with the source tables.
 
 ### Features
 

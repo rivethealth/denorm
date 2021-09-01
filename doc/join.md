@@ -1,98 +1,199 @@
 # Join
 
-Join multiple tables.
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+- [Overview](#overview)
+- [Example](#example)
+- [Options](#options)
+- [Asynchronous joins](#asynchronous-joins)
+- [Backfill](#backfill)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ## Overview
 
-1. Create a target table that will hold the denormalized data.
+Join gathers keys from multiple tables, and then uses those keys to perform a
+target action.
 
-2. Compose a query that will populate that table. Include a placeholder `$1` for
-   the recordset of primary keys.
-
-3. Author a JSON file describing the relationships between the underlying tables
-   of the query.
-
-4. Run the `denorm create-join` command to generate SQL DDL for triggers and
-   functions.
-
-5. Apply the generated SQL to the database.
-
-Now the target table will be kept up-to-date whenever the relevant tables
-change.
+```sh
+< schema.json denorm create-join > output.sql
+```
 
 ## Example
 
 For a full working example, see [Join example](join-example.md).
 
-## Schema
+## Options
 
-See [Join config](join-schema.md) for documentation of all options.
+See [Join config](join-schema.md) for documentation generated from JSONSchema.
 
-## Generated objects
+### Root
 
-The `id` is used to name database objects.
+#### Constistency
 
-Database objects are created in `schema`, if given. Otherwise they will be
-created in the default schema.
+`consistency`
 
-## Target
+There are two modes. The default is immedidate.
 
-The target table must have a primary key. It may have columns not populated by
-the query.
+##### Immediate
 
-`key` will be inferred automatically from `targetTable`. If `targetTable` is not
-present, the `targetQuery` itself should perform the update.
+```json
+"immediate"
+```
 
-## Tables
+The target is updated at the end of the statement.
 
-Tables are the source tables from which changes will be propogated.
+##### Deferred
 
-If the primary key of the target is known from the table,
+```json
+"deferred"
+```
 
-- `targetKey` - List of expressions for primary key of target table
+The target is updated at the end of the transaction.
 
-Otherwise, it must reference another table,
+Deferring work involves overhead. It can be useful in a couple cases
 
-- `join` - Identify of the source to reference.
-- `joinOn` - Expression for an inner join on the two sources.
+- Deduplicating work. For example, if multiple "levels" of records (e.g. a
+  record and children and grandchildren) are affected in the same transaction.
+- Reducing lock duraton on target records.
 
-## Lock
+#### ID
+
+`id`
+
+The ID is used to name database objects. To prevent naming conflicts, the ID
+should be unique (within a schema) .
+
+#### Key
+
+The target primary key is specified by `key`, which is an array of the column
+names and types.
+
+```json
+[{ "name": "id", "type": "bigint" }]
+```
+
+If `targetTarget.key` is specified, `key` can be ommitted, and inferred from
+that.
+
+#### Lock
+
+`lock`
+
+Whether to use a lock table.
 
 Using upserts in `REPEATABLE READ` transactions and multi-table joins can be
 susceptible to ordering conditions.
 
 To prevent these, denorm can use a value lock table on the target key.
 
-## Constistency
+#### Schema
 
-There are two consistency modes.
+`schema`
 
-### Immediate
+If specified, created generated objects in the this schema. If not specified,
+objects are created and referenced without schema qualifiers.
 
-The target is updated by the end of the statement.
+#### Tables
 
-### Deferred
+`tables`
 
-The target is updated at the end of the transaction.
+A map of IDs to source table definitions.
 
-Deferring work involves overhead. It is useful for deduplicating work when
-related data is modified multiple times. A common example is updating multiple
-levels of records (insert a record and children and grandchildren all in the
-same transaction).
+#### Target query
 
-## Join mode
+`targetQuery`
+
+This query the gathered keys. The placeholder `$1` substituted with the table
+(or parenthesized table expression) of the keys.
+
+```json
+"SELECT * FROM $1"
+```
+
+#### Target table
+
+`targetTable`
+
+See [Target table](#target-table-1).
+
+### Target table
+
+#### Columns
+
+`columns`
+
+The column names, in the same order as returned by the target query.
+
+#### Key
+
+`key`
+
+The column names of the unique key of the table. Used for asynchronous joins.
+
+#### Refresh
+
+`refresh`
+
+TODO
+
+#### Schema
+
+`schema`
+
+The schema name of the table. If not specified, the table is referenced without
+qualification.
+
+#### Table
+
+`table`
+
+The table name.
+
+### Table
+
+The source table from which changes will be propogated.
+
+Either the target key (direct relationship with the target) or the join
+(transitive relationship with the target) must be specified.
+
+#### Lock ID
+
+The 16-bit
+[advisory lock](https://www.postgresql.org/docs/12/explicit-locking.html#ADVISORY-LOCKS)
+prefix to use for queueing, if the join is asynchronous. By default, the lock
+space is generated from the ID and table ID.
+
+#### Join
+
+`join`
+
+The ID of the table to join to.
+
+#### Join mode
+
+`joinMode`
 
 There are two modes for joining tables
 
-### Synchronous
+##### Synchronous
+
+```json
+"sync"
+```
 
 Join to all dependency records in the current transaction.
 
-### Asynchronous
+##### Asynchronous
+
+```json
+"async"
+```
 
 If tables have an 1:N relationship with a very large N — say, tens of thousands
 — it may not be feasible to process all records a single transaction. Denorm
-allows the join to be broken up over multiple transactions.
+allows the join to happen over multiple transactions.
 
 Use `key` to indicate a unique key on the table, and `joinKey` to indicate a
 unique key on the foreign table. These are used to track the iteration state.
@@ -134,15 +235,46 @@ tables:
 
 </details>
 
-The state of the join is tracked in the table `book_full__que__genre`.
+See additional comments in [Asynchronous joins](#asynchronous-joins).
 
-#### Worker
+#### Join on
 
-Updates will not automatically affect the target table. Instead, changes are
-queued and must be processed seperately by a worker.
+`joinOn`
 
-The queue uses
-[advistory locks.](https://www.postgresql.org/docs/12/explicit-locking.html#ADVISORY-LOCKS)
+The conditional expression for joining.
+
+#### Join other
+
+`joinOther`
+
+Expressions to add to the joins, before joining to this table. This can add
+extra context. Care should be taken to ensure that tables referenced here are
+tracked and monitored for changes elsewhere.
+
+#### Table
+
+`table`
+
+The table name. If not specified, the table is a "pseudo table." This is usefull for asynchronous backfills.
+
+#### Target key
+
+`targetKey`
+
+SQL expressions for the target key.
+
+#### Schema
+
+`schema`
+
+The schema name. If unspecified, the table is referenced without schema
+qualification.
+
+## Asynchronous joins
+
+For asynchronous joins, updates will not automatically affect the target table.
+Instead, the state of the join is tracked in a table (e.g.
+`book_full__que__genre`) and must be processed by a worker.
 
 ```sql
 -- Find an incomplete author change and refresh the target for up to 1000 corresponding
@@ -151,10 +283,9 @@ The queue uses
 SELECT book_full__pcs__genre(1000);
 ```
 
-This function should be called periodically. Additionally workers can listen to
-the `public.book_full__que__genre` listener.
-
-</details>
+This function should be called periodically. For lower latency updates, workers
+can listen to the `public.book_full__que__genre` topic which notified whenever a
+join requires processing.
 
 ### Errors
 
@@ -166,7 +297,7 @@ that the query does not have errors, else they will halt asynchronous updates.
 The dependency table should have an btree index that covers the foreign key and
 its own unique key, in that order.
 
-In the earlier example,
+In the earlier example, that index would be:
 
 ```sql
 CREATE INDEX ON book (genre_id, id);
@@ -174,14 +305,15 @@ CREATE INDEX ON book (genre_id, id);
 
 Take careful note of this requirement, as such indices do not usually include
 the second part (a unique key on the table itself). However, this is essential
-for good performance.
+for good performance as it allows the join to continue where it left off,
+without unnecessary scans.
 
 ## Backfill
 
-The previous can be leveraged to create an asynchronous fill of the entire
+Denorm can be leveraged to create an asynchronous fill of the entire
 table.
 
-Add a tables entry with `join`, `joinMode: async`, and `joinKey`.
+Add a tables entry (suggested name: all) with `join`, `joinMode: async`, and `joinKey`.
 
 <details>
 <summary>book_full.yml</summary>

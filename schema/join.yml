@@ -52,6 +52,11 @@ definitions:
         items: { type: string }
         title: Join key
         type: [array, "null"]
+      joinOther:
+        default: null
+        description: Expressions to add to join
+        title: Join other
+        type: [string, "null"]
       joinOn:
         default: null
         description: SQL expression to join to dependency.

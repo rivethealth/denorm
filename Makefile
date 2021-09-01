@@ -69,6 +69,7 @@ test-format: target/format-test.target
 
 target/format.target: target/node_modules.target $(FORMAT_SRC) $(PRETTIER_SRC) .prettierrc.yml
 	doctoc --notitle --maxlevel 2 README.md
+	doctoc --notitle --maxlevel 2 doc/join.md
 	isort --profile black $(FORMAT_SRC)
 	black -t py37 $(FORMAT_SRC)
 	prettier -w $(PRETTIER_SRC)
