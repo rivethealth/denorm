@@ -60,7 +60,7 @@ _SCHEMA_JSON = {
         b.title,
         a.names
     FROM
-        $1 AS k (id)
+        ${key} AS k (id)
         JOIN book AS b ON k.id = b.id
         CROSS JOIN LATERAL (
             SELECT coalesce(array_agg(a.name ORDER BY ba.ordinal), '{}') AS names

@@ -82,5 +82,5 @@ class JoinTarget(typing.Protocol):
     def key(self) -> typing.Optional[Key]:
         pass
 
-    def sql(self, key_table: SqlObject) -> SqlQuery:
+    def sql(self, key_table: SqlObject, table_id: typing.Optional[str]) -> SqlQuery:
         pass

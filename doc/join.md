@@ -105,11 +105,16 @@ A map of IDs to source table definitions.
 
 `targetQuery`
 
-This query the gathered keys. The placeholder `$1` substituted with the table
-(or parenthesized table expression) of the keys.
+This query the gathered keys. Placeholders take the form of `${key}`. Literal
+`$` characters are escaped as `$$`.
+
+Placeholders:
+
+- `key` - table (or parenthesized table expression) of keys
+- `table` - table name, or empty if deferred
 
 ```json
-"SELECT * FROM $1"
+"SELECT * FROM ${key}"
 ```
 
 #### Target table
@@ -255,7 +260,8 @@ tracked and monitored for changes elsewhere.
 
 `table`
 
-The table name. If not specified, the table is a "pseudo table." This is usefull for asynchronous backfills.
+The table name. If not specified, the table is a "pseudo table." This is usefull
+for asynchronous backfills.
 
 #### Target key
 
@@ -310,10 +316,10 @@ without unnecessary scans.
 
 ## Backfill
 
-Denorm can be leveraged to create an asynchronous fill of the entire
-table.
+Denorm can be leveraged to create an asynchronous fill of the entire table.
 
-Add a tables entry (suggested name: all) with `join`, `joinMode: async`, and `joinKey`.
+Add a tables entry (suggested name: all) with `join`, `joinMode: async`, and
+`joinKey`.
 
 <details>
 <summary>book_full.yml</summary>

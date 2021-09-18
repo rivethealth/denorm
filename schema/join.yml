@@ -169,7 +169,7 @@ properties:
     title: Tables
     type: object
   targetQuery:
-    default: TABLE $1
+    default: TABLE ${key}
     description: Query to populate the target table.
     title: Query
     type: [string, "null"]

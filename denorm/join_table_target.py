@@ -27,8 +27,10 @@ FROM {self._table.sql}
             names = self._table.key
             return Key(definition=definition, names=names)
 
-    def sql(self, key_table: SqlObject) -> SqlQuery:
-        formatted = format(self._query, str(key_table))
+    def sql(self, key_table: SqlObject, table_id: typing.Optional[str]) -> SqlQuery:
+        formatted = format(
+            self._query, {"key": str(key_table), "table": table_id or ""}
+        )
 
         if self._table.refresh == JoinRefresh.FULL:
             query = sync_query(

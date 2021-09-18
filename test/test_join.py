@@ -45,7 +45,7 @@ _SCHEMA_JSON = {
     },
     "targetQuery": """
         SELECT c.id, p.name
-        FROM $1 AS d
+        FROM ${key} AS d
             JOIN child c ON d.id = c.id
             JOIN parent p ON c.parent_id = p.id
     """,

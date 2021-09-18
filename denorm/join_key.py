@@ -22,6 +22,7 @@ from .string import indent
 class KeyConsumer(typing.Protocol):
     def sql(
         key_query: str,
+        table_id: str,
         exprs: typing.List[SqlTableExpr] = [],
         last_expr: typing.Optional[SqlTableExpr] = None,
     ) -> str:
@@ -46,6 +47,7 @@ class TargetRefresh(KeyConsumer):
     def sql(
         self,
         key_query: str,
+        table_id: str,
         exprs: typing.List[SqlTableExpr] = [],
         last_expr: typing.Optional[str] = None,
     ):
@@ -64,7 +66,7 @@ ANALYZE {lock_table};
 {target_query};
             """.strip()
 
-            target_query = self._target.sql(lock_table)
+            target_query = self._target.sql(lock_table, table_id)
             for expr in reversed(exprs):
                 target_query.prepend(expr)
             if last_expr is not None:
@@ -77,7 +79,7 @@ ANALYZE {lock_table};
             """.strip()
         else:
             key_table = SqlId("_key")
-            target_query = self._target.sql(key_table)
+            target_query = self._target.sql(key_table, table_id)
             target_query.prepend(SqlTableExpr(key_table, key_query))
             for expr in reversed(exprs):
                 target_query.prepend(expr)
@@ -152,4 +154,4 @@ class KeyResolver:
                 last_expr=last_expr,
             )
 
-        return self._action.sql(key_query, exprs=exprs, last_expr=last_expr)
+        return self._action.sql(key_query, last_id, exprs=exprs, last_expr=last_expr)

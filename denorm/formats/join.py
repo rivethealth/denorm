@@ -126,7 +126,7 @@ class JoinConfig:
     key: typing.Optional[typing.List[JoinKeyColumn]] = None
     lock: bool = False
     consistency: JoinConsistency = JoinConsistency.IMMEDIATE
-    target_query: typing.Optional[str] = "TABLE $1"
+    target_query: typing.Optional[str] = "TABLE ${key}"
     schema: typing.Optional[str] = None
     setup: typing.Optional[JoinHook] = None
 

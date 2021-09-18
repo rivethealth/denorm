@@ -18,6 +18,8 @@ class JoinPlainTarget(JoinTarget):
     def key(self) -> typing.Optional[Key]:
         pass
 
-    def sql(self, key_table: SqlObject) -> SqlQuery:
-        formatted = format(self._query, str(key_table))
+    def sql(self, key_table: SqlObject, table_id: typing.Optional[str]) -> SqlQuery:
+        formatted = format(
+            self._query, {"key": str(key_table), "table": table_id or ""}
+        )
         return SqlQuery(formatted)

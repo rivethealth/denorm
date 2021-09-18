@@ -19,7 +19,7 @@ def create_refresh_function(
     refresh_table = structure.refresh_table()
 
     key_table = structure.key_table()
-    refresh_sql = refresh.sql(f"TABLE {key_table}")
+    refresh_sql = refresh.sql(f"TABLE {key_table}", None)
 
     yield f"""
 CREATE FUNCTION {refresh_function} () RETURNS trigger
@@ -95,6 +95,7 @@ class DeferredKeys(KeyConsumer):
     def sql(
         self,
         key_query: str,
+        table_id: str,
         exprs: typing.List[SqlTableExpr] = [],
         last_expr: typing.Optional[str] = None,
     ):
