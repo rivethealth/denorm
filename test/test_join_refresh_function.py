@@ -33,6 +33,8 @@ _SCHEMA_JSON = {
         },
         "child": {
             "name": "child",
+            "key": [{"name": "id", "type": "int"}],
+            "refreshFunction": True,
             "schema": "public",
             "targetKey": ["child.id"],
         },
@@ -138,7 +140,6 @@ def test_join_refresh_function_parent(pg_database):
             ]
         )
         with connection("") as conn, transaction(conn) as cur:
-            print(output.decode("utf-8"))
             cur.execute(output.decode("utf-8"))
 
         with connection("") as conn, transaction(conn) as cur:
@@ -152,6 +153,46 @@ def test_join_refresh_function_parent(pg_database):
                     (result,) = cur.fetchone()
                     if not result:
                         break
+
+        with connection("") as conn, transaction(conn) as cur:
+            cur.execute("SELECT * FROM child_full ORDER BY id")
+            result = cur.fetchall()
+            assert result == [(1, "A"), (2, "A")]
+
+
+def test_join_refresh_function_child(pg_database):
+    with temp_file("denorm-") as schema_file:
+        with connection("") as conn, transaction(conn) as cur:
+            cur.execute(_SCHEMA_SQL)
+
+        with open(schema_file, "w") as f:
+            json.dump(_SCHEMA_JSON, f)
+
+        with connection("") as conn, transaction(conn) as cur:
+            cur.execute(
+                """
+                    INSERT INTO parent (id, name)
+                    VALUES (1, 'A'), (2, 'B');
+
+                    INSERT INTO child (id, parent_id)
+                    VALUES (1, 1), (2, 1), (3, 2);
+                """
+            )
+
+        output = run_process(
+            [
+                "denorm",
+                "create-join",
+                "--schema",
+                schema_file,
+            ]
+        )
+        with connection("") as conn, transaction(conn) as cur:
+            cur.execute(output.decode("utf-8"))
+
+        with connection("") as conn, transaction(conn) as cur:
+            cur.execute("SELECT test__rfs__child(1) FROM child")
+            cur.execute("SELECT test__rfs__child(2) FROM child")
 
         with connection("") as conn, transaction(conn) as cur:
             cur.execute("SELECT * FROM child_full ORDER BY id")

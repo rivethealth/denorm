@@ -76,7 +76,7 @@ COMMENT ON COLUMN {queue_table}.seq IS 'Order to process'
     """.strip()
 
     yield f"""
-COMMENT ON COLUMN {queue_table}.lock IS 'Lock ID'
+COMMENT ON COLUMN {queue_table}.lock IS 'Lock ID (add to base value {lock_base})'
     """.strip()
 
     yield f"""

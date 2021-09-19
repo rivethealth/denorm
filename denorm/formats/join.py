@@ -147,14 +147,7 @@ class JoinInvalid(Exception):
 
 
 def validate_join(join: JoinConfig):
-    if join.consistency == JoinConsistency.DEFERRED and join.target_query is None:
-        raise JoinInvalid("Deferrable mode is only used with query")
     for table_id, table in join.tables.items():
-        if table.join_mode == JoinJoinMode.ASYNC:
-            if table.join_key is None:
-                raise JoinInvalid(
-                    f"Table {table_id} uses joinMode=async but is missing joinKey"
-                )
         if table.refresh_function and any(
             column.type is None for column in table.key or []
         ):

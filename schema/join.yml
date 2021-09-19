@@ -2,19 +2,6 @@ $schema: http://json-schema.org/draft-07/schema
 additionalProperties: false
 description: Configuration for joining tables.
 definitions:
-  hook:
-    description: Hook function.
-    properties:
-      schema:
-        description: Schema of function.
-        title: Schema
-        type: string
-      name:
-        description: Name of function.
-        title: Name
-        type: string
-    title: Hook
-    type: object
   column:
     description: Column.
     properties:
@@ -50,14 +37,26 @@ definitions:
     title: Column
   table:
     additionalProperties: false
-    description: Table
+    description: Source table.
     dependencies:
       joinOn: [join]
+    allOf:
+      - oneOf:
+          - required: [targetKey]
+            not: { required: [join] }
+          - required: [join]
+            not: { required: [targetKey] }
+      - oneOf:
+          - not:
+              properties:
+                joinMode: { enum: [async] }
+              required: [joinMode]
+          - required: [joinKey]
     properties:
       columns:
         items: { $ref: "#/definitions/column" }
         default: null
-        description: Columns.
+        description: Columns to select from table.
         title: Columns
         type: ["null", array]
       lockId:
@@ -80,21 +79,21 @@ definitions:
         items: { type: string }
         title: Join key
         type: [array, "null"]
+      joinMode:
+        default: sync
+        description: Mode of dependency join.
+        enum: [async, sync]
+        title: Join consistency
+        type: [string, "null"]
       joinOther:
         default: null
-        description: Expressions to add to join
+        description: Expressions to add to join.
         title: Join other
         type: [string, "null"]
       joinOn:
         default: null
         description: SQL expression to join to dependency.
         title: Dependency join
-        type: [string, "null"]
-      joinMode:
-        default: sync
-        description: Mode of dependency join.
-        enum: [async, sync]
-        title: Join consistency
         type: [string, "null"]
       key:
         default: null
@@ -108,7 +107,9 @@ definitions:
         type: string
       refreshFunction:
         default: false
-        type: [boolean]
+        description: Whether to generate a refresh function.
+        title: Refresh function
+        type: boolean
       schema:
         default: None
         description: Name of schema.
@@ -152,7 +153,7 @@ definitions:
         title: Schema
         type: string
       name:
-        description: Name of table
+        description: Name of table.
         title: Name
         type: string
     required: [name]
@@ -160,7 +161,9 @@ definitions:
 properties:
   consistency:
     default: immedidate
-    description: Consistency level
+    description:
+      Consistency level. Immediate applies at the end of the command. Deferred
+      applies at the end of a transaction.
     enum: [deferred, immediate]
     title: Consistency
     type: string

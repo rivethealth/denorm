@@ -1,9 +1,10 @@
-from pg_sql import SqlId, SqlString
+from pg_sql import SqlId, SqlObject, SqlString
 
 from .formats.join import JoinTable
 from .join_async import enqueue_sql
 from .join_common import Structure
-from .sql import sql_list
+from .join_key import KeyResolver
+from .sql import SqlTableExpr, sql_list
 from .string import indent
 
 
@@ -11,15 +12,19 @@ def param_name(name) -> SqlId:
     return SqlId(f"_{name}")
 
 
-def create_refresh_function(structure: Structure, table_id: str, table: JoinTable):
+def create_refresh_function(
+    structure: Structure, resolver: KeyResolver, table_id: str, table: JoinTable
+):
     if table.key:
-        key_query = (
-            f"SELECT {sql_list(param_name(column.name) for column in table.key)}"
+        columns = sql_list(
+            f"{param_name(column.name)} AS {column.sql}" for column in table.key
         )
+        key_query = f"SELECT {columns}"
     else:
-        key_query = "SELECT false"
+        key_query = "SELECT false AS _"
 
-    enqueue = enqueue_sql(table_id, table, structure, key_query, [], None)
+    key = SqlId("key")
+    query = resolver.sql(SqlObject(key), [SqlTableExpr(name=key, query=key_query)])
 
     function = structure.refresh_table_function(table_id)
 
@@ -30,7 +35,7 @@ def create_refresh_function(structure: Structure, table_id: str, table: JoinTabl
 CREATE FUNCTION {function}({params}) RETURNS void
 LANGUAGE plpgsql AS $$
   BEGIN
-{indent(enqueue, 2)}
+{indent(query, 2)}
   END;
 $$
     """.strip()

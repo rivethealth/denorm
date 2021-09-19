@@ -30,7 +30,7 @@ setuptools.setup(
     package_data={
         "denorm.formats": ["*.json"],
     },
-    install_requires=["dataclasses-json", "jsonschema", "pg-sql"],
+    install_requires=["dataclasses-json", "jsonschema", "pg-sql>=0.0.1"],
     long_description=long_description,
     long_description_content_type="text/markdown",
     name="denorm",

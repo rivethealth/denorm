@@ -134,17 +134,7 @@ def _statements(config: JoinConfig):
             tables=config.tables,
         )
 
-        if table.refresh_function:
-            yield from create_table_refresh_function(
-                structure=structure,
-                table=table,
-                table_id=table_id,
-            )
-
     for table_id, table in config.tables.items():
-        if table.name is None:
-            continue
-
         if config.consistency == JoinConsistency.DEFERRED:
             action = DeferredKeys(key=key.names, structure=structure)
         elif config.consistency == JoinConsistency.IMMEDIATE:
@@ -158,10 +148,19 @@ def _statements(config: JoinConfig):
             tables=config.tables,
         )
 
-        yield from create_change(
-            id=config.id,
-            resolver=resolver,
-            structure=structure,
-            table=table,
-            table_id=table_id,
-        )
+        if table.refresh_function:
+            yield from create_table_refresh_function(
+                resolver=resolver,
+                structure=structure,
+                table=table,
+                table_id=table_id,
+            )
+
+        if table.name is not None:
+            yield from create_change(
+                id=config.id,
+                resolver=resolver,
+                structure=structure,
+                table=table,
+                table_id=table_id,
+            )
