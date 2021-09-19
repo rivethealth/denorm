@@ -30,13 +30,15 @@ def create_queue(
 
     queue_table = structure.queue_table(table_id)
 
-    local_columns = [local_column(column) for column in (table.key or ["_"])]
+    column_names = [column.name for column in table.key] if table.key else ["_"]
+
+    local_columns = [local_column(column) for column in column_names]
     foreign_columns = [foreign_column(column) for column in table.join_key]
 
     yield f"""
 CREATE TABLE {queue_table}
 AS SELECT
-  {sql_list(f"{SqlObject(SqlId('l'), SqlId(column))} AS {local_column(column)}" for column in (table.key or ["_"]))},
+  {sql_list(f"{SqlObject(SqlId('l'), SqlId(column))} AS {local_column(column)}" for column in column_names)},
   {sql_list(f"{SqlObject(SqlId('f'), SqlId(column))} AS {foreign_column(column)}" for column in table.join_key)},
   NULL::bigint AS seq,
   NULL::bigint AS lock
@@ -59,7 +61,7 @@ ALTER TABLE {queue_table}
 COMMENT ON TABLE {queue_table} IS {SqlString(f"Asynchronous processing of changes to {table.sql}")}
     """.strip()
 
-    for column in table.key or ["_"]:
+    for column in column_names:
         yield f"""
 COMMENT ON COLUMN {queue_table}.{local_column(column)} IS {SqlString(f"{table.sql} key: {SqlId(column)}")}
 """
@@ -99,7 +101,7 @@ ORDER BY {table_fields(SqlId("k"), table.join_key)} DESC
 
     if table.join_on is not None:
         join = f"""
-JOIN (VALUES ({table_fields(item, local_columns)})) AS {SqlId(table_id)} ({sql_list(SqlId(col) for col in table.key)})
+JOIN (VALUES ({table_fields(item, local_columns)})) AS {SqlId(table_id)} ({sql_list(SqlId(col.name) for col in table.key)})
 ON {table.join_on}
         """.strip()
     else:
@@ -198,7 +200,8 @@ def enqueue_sql(
 ):
     queue_table = structure.queue_table(id)
 
-    local_columns = [local_column(column) for column in (table.key or ["_"])]
+    column_names = [column.name for column in table.key] if table.key else ["_"]
+    local_columns = [local_column(column) for column in column_names]
 
     if table.key:
         order = (

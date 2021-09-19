@@ -1,4 +1,5 @@
 $schema: http://json-schema.org/draft-07/schema
+additionalProperties: false
 description: Configuration for joining tables.
 definitions:
   hook:
@@ -21,17 +22,44 @@ definitions:
         description: Name of column.
         title: Name
         type: string
+      value:
+        default: null
+        description: SQL expression. If null, the column value is used.
+        title: Value
+        type: ["null", string]
+    required: [name]
+    title: Column
+  keyColumn:
+    description: Column.
+    properties:
+      name:
+        description: Name of column.
+        title: Name
+        type: string
       type:
+        default: null
         description: Type of column.
         title: Type
-        type: string
-    required: [name, type]
+        type: ["null", string]
+      value:
+        default: null
+        description: SQL expression. If null, the column value is used.
+        title: Value
+        type: ["null", string]
+    required: [name]
     title: Column
   table:
+    additionalProperties: false
     description: Table
     dependencies:
       joinOn: [join]
     properties:
+      columns:
+        items: { $ref: "#/definitions/column" }
+        default: null
+        description: Columns.
+        title: Columns
+        type: ["null", array]
       lockId:
         default: null
         description:
@@ -71,22 +99,21 @@ definitions:
       key:
         default: null
         description: Unique key.
-        items: { type: string }
+        items: { $ref: "#/definitions/keyColumn" }
         title: key
         type: [array, "null"]
-      keyType:
-        default: null
-        description: Key column types
-        items: { type: string }
-        title: Key type
-        type: [array, "null"]
       name:
-        description: Name of table
+        description: Name of table.
         title: Name
         type: string
       refreshFunction:
         default: false
         type: [boolean]
+      schema:
+        default: None
+        description: Name of schema.
+        title: Schema
+        type: string
       targetKey:
         default: null
         description: SQL expressions for target key values.
@@ -149,7 +176,7 @@ properties:
   key:
     default: null
     description: Key. If null, uses values from targetTable.
-    item: { $ref: "#/definitions/column" }
+    item: { $ref: "#/definitions/keyColumn" }
     title: Key
     type: [array, "null"]
   setup:

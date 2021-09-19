@@ -26,7 +26,33 @@ class JoinRefresh(enum.Enum):
 
 @dataclasses_json.dataclass_json(
     letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass
+class JoinColumn:
+    name: str
+    value: typing.Optional[str] = None
+
+    @property
+    def sql(self) -> SqlId:
+        return SqlId(self.name)
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+)
+@dataclasses.dataclass
+class JoinKeyColumn:
+    name: str
+    type: typing.Optional[str] = None
+    value: typing.Optional[str] = None
+
+    @property
+    def sql(self) -> SqlId:
+        return SqlId(self.name)
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
 )
 @dataclasses.dataclass
 class JoinTargetTable:
@@ -47,17 +73,17 @@ class JoinTargetTable:
 
 @dataclasses_json.dataclass_json(
     letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
 )
 @dataclasses.dataclass
 class JoinTable:
+    columns: typing.Optional[typing.List[JoinColumn]] = None
     name: typing.Optional[str] = None
     join: typing.Optional[str] = None
     join_key: typing.Optional[typing.List[str]] = None
     join_on: typing.Optional[str] = None
     join_mode: JoinJoinMode = JoinJoinMode.SYNC
     join_other: typing.Optional[str] = None
-    key: typing.Optional[typing.List[str]] = None
+    key: typing.Optional[typing.List[JoinKeyColumn]] = None
     key_type: typing.Optional[typing.List[str]] = None
     refresh_function: bool = False
     lock_id: typing.Optional[int] = None
@@ -84,7 +110,6 @@ class JoinTable:
 
 @dataclasses_json.dataclass_json(
     letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
 )
 @dataclasses.dataclass(frozen=True)
 class JoinHook:
@@ -102,21 +127,6 @@ class JoinHook:
 
 @dataclasses_json.dataclass_json(
     letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
-@dataclasses.dataclass
-class JoinKeyColumn:
-    name: str
-    type: str
-
-    @property
-    def sql(self) -> SqlId:
-        return SqlId(self.name)
-
-
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
 )
 @dataclasses.dataclass
 class JoinConfig:
@@ -139,6 +149,18 @@ class JoinInvalid(Exception):
 def validate_join(join: JoinConfig):
     if join.consistency == JoinConsistency.DEFERRED and join.target_query is None:
         raise JoinInvalid("Deferrable mode is only used with query")
+    for table_id, table in join.tables.items():
+        if table.join_mode == JoinJoinMode.ASYNC:
+            if table.join_key is None:
+                raise JoinInvalid(
+                    f"Table {table_id} uses joinMode=async but is missing joinKey"
+                )
+        if table.refresh_function and any(
+            column.type is None for column in table.key or []
+        ):
+            raise JoinInvalid(
+                f"Table {table_id} refreshFunction required types for columns"
+            )
 
 
 JOIN_JSON_FORMAT = package_json_format("denorm.formats", "join.json")

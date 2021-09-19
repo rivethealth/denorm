@@ -1,5 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema",
+  "additionalProperties": false,
   "description": "Configuration for joining tables.",
   "definitions": {
     "hook": {
@@ -27,21 +28,56 @@
           "title": "Name",
           "type": "string"
         },
-        "type": {
-          "description": "Type of column.",
-          "title": "Type",
-          "type": "string"
+        "value": {
+          "default": null,
+          "description": "SQL expression. If null, the column value is used.",
+          "title": "Value",
+          "type": ["null", "string"]
         }
       },
-      "required": ["name", "type"],
+      "required": ["name"],
+      "title": "Column"
+    },
+    "keyColumn": {
+      "description": "Column.",
+      "properties": {
+        "name": {
+          "description": "Name of column.",
+          "title": "Name",
+          "type": "string"
+        },
+        "type": {
+          "default": null,
+          "description": "Type of column.",
+          "title": "Type",
+          "type": ["null", "string"]
+        },
+        "value": {
+          "default": null,
+          "description": "SQL expression. If null, the column value is used.",
+          "title": "Value",
+          "type": ["null", "string"]
+        }
+      },
+      "required": ["name"],
       "title": "Column"
     },
     "table": {
+      "additionalProperties": false,
       "description": "Table",
       "dependencies": {
         "joinOn": ["join"]
       },
       "properties": {
+        "columns": {
+          "items": {
+            "$ref": "#/definitions/column"
+          },
+          "default": null,
+          "description": "Columns.",
+          "title": "Columns",
+          "type": ["null", "array"]
+        },
         "lockId": {
           "default": null,
           "description": "Advisory lock space to use for queueing. If null, it is generated from the ID and table ID.",
@@ -88,28 +124,25 @@
           "default": null,
           "description": "Unique key.",
           "items": {
-            "type": "string"
+            "$ref": "#/definitions/keyColumn"
           },
           "title": "key",
           "type": ["array", "null"]
         },
-        "keyType": {
-          "default": null,
-          "description": "Key column types",
-          "items": {
-            "type": "string"
-          },
-          "title": "Key type",
-          "type": ["array", "null"]
-        },
         "name": {
-          "description": "Name of table",
+          "description": "Name of table.",
           "title": "Name",
           "type": "string"
         },
         "refreshFunction": {
           "default": false,
           "type": ["boolean"]
+        },
+        "schema": {
+          "default": "None",
+          "description": "Name of schema.",
+          "title": "Schema",
+          "type": "string"
         },
         "targetKey": {
           "default": null,
@@ -191,7 +224,7 @@
       "default": null,
       "description": "Key. If null, uses values from targetTable.",
       "item": {
-        "$ref": "#/definitions/column"
+        "$ref": "#/definitions/keyColumn"
       },
       "title": "Key",
       "type": ["array", "null"]

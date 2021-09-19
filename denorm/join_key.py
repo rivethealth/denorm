@@ -130,7 +130,7 @@ class KeyResolver:
                 key_query += f"\nFROM"
                 key_query += f"\n  {table_sql} AS {SqlId(dep_id)}"
             elif dep.join_mode == JoinJoinMode.ASYNC:
-                dep_columns = [SqlId(column) for column in dep.key]
+                dep_columns = [column.sql for column in dep.key]
                 key_query += (
                     f"SELECT DISTINCT {table_fields(SqlId(dep_id), dep_columns)}"
                 )

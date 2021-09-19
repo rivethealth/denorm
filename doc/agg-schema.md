@@ -17,7 +17,7 @@ _Configuration for aggregating a table._
 
 ## Definitions
 
-- **`aggregate`** _(object)_
+- **`aggregate`** _(object)_: Cannot contain additional properties.
   - **`combine`** _(['string', 'null'])_: Combining expression. If null,
     defaults to existing.$name + excluding.$name. Default: `None`.
   - **`value`** _(string)_

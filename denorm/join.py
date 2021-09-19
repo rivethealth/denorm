@@ -162,6 +162,6 @@ def _statements(config: JoinConfig):
             id=config.id,
             resolver=resolver,
             structure=structure,
-            table=table.sql,
+            table=table,
             table_id=table_id,
         )

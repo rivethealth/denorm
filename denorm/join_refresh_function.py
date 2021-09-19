@@ -13,7 +13,9 @@ def param_name(name) -> SqlId:
 
 def create_refresh_function(structure: Structure, table_id: str, table: JoinTable):
     if table.key:
-        key_query = f"SELECT {sql_list(param_name(name) for name in table.key)}"
+        key_query = (
+            f"SELECT {sql_list(param_name(column.name) for column in table.key)}"
+        )
     else:
         key_query = "SELECT false"
 
@@ -22,8 +24,7 @@ def create_refresh_function(structure: Structure, table_id: str, table: JoinTabl
     function = structure.refresh_table_function(table_id)
 
     params = sql_list(
-        f"{param_name(name)} {type}"
-        for name, type in zip(table.key or [], table.key_type or [])
+        f"{param_name(column.name)} {column.type}" for column in (table.key or [])
     )
     yield f"""
 CREATE FUNCTION {function}({params}) RETURNS void

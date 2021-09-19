@@ -27,8 +27,16 @@ _Configuration for joining tables._
   - **`name`** _(string)_: Name of function.
 - **`column`**: Column.
   - **`name`** _(string)_: Name of column.
-  - **`type`** _(string)_: Type of column.
-- **`table`** _(object)_: Table.
+  - **`value`** _(['null', 'string'])_: SQL expression. If null, the column
+    value is used. Default: `None`.
+- **`keyColumn`**: Column.
+  - **`name`** _(string)_: Name of column.
+  - **`type`** _(['null', 'string'])_: Type of column. Default: `None`.
+  - **`value`** _(['null', 'string'])_: SQL expression. If null, the column
+    value is used. Default: `None`.
+- **`table`** _(object)_: Table. Cannot contain additional properties.
+  - **`columns`** _(['null', 'array'])_: Columns. Default: `None`.
+    - **Items**: Refer to _#/definitions/column_.
   - **`lockId`** _(['integer', 'null'])_: Advisory lock space to use for
     queueing. If null, it is generated from the ID and table ID. Minimum:
     `-32678`. Maximum: `32677`. Default: `None`.
@@ -43,11 +51,10 @@ _Configuration for joining tables._
   - **`joinMode`** _(['string', 'null'])_: Mode of dependency join. Must be one
     of: `['async', 'sync']`. Default: `sync`.
   - **`key`** _(['array', 'null'])_: Unique key. Default: `None`.
-    - **Items** _(string)_
-  - **`keyType`** _(['array', 'null'])_: Key column types. Default: `None`.
-    - **Items** _(string)_
+    - **Items**: Refer to _#/definitions/keyColumn_.
   - **`name`** _(string)_: Name of table.
   - **`refreshFunction`** _(['boolean'])_: Default: `False`.
+  - **`schema`** _(string)_: Name of schema. Default: `None`.
   - **`targetKey`** _(['array', 'null'])_: SQL expressions for target key
     values. Default: `None`.
     - **Items** _(string)_

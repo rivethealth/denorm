@@ -42,11 +42,11 @@ _SCHEMA_JSON = {
             "name": "grandparent",
         },
         "parent": {
+            "key": [{"name": "id"}],
             "join": "child",
             "joinKey": ["id"],
             "joinMode": "async",
             "joinOn": "parent.id = child.parent_id",
-            "key": ["id"],
             "name": "parent",
         },
     },

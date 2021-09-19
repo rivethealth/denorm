@@ -200,7 +200,7 @@ If tables have an 1:N relationship with a very large N — say, tens of thousand
 — it may not be feasible to process all records a single transaction. Denorm
 allows the join to happen over multiple transactions.
 
-Use `key` to indicate a unique key on the table, and `joinKey` to indicate a
+Use `columns` for the relevant data on the table, and `joinKey` to indicate a
 unique key on the foreign table. These are used to track the iteration state.
 (See comments in Performance section).
 
@@ -220,7 +220,8 @@ tables:
     name: book_author
     schema: public
   book:
-    key: [id]
+    columns:
+      - name: id
     name: book
     schema: public
     targetKey: [book.id]

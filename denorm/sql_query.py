@@ -6,23 +6,6 @@ from .sql import SqlQuery, SqlTableExpr, table_fields, update_excluded
 from .string import indent
 
 
-def insert_query(
-    columns: typing.List[SqlId],
-    query: str,
-    target: SqlObject,
-    expressions: typing.Optional[str] = None,
-) -> SqlQuery:
-    """
-    Insert data
-    """
-    insert_query = f"""
-INSERT INTO {target} ({sql_list(columns)})
-{query}
-    """.strip()
-
-    return SqlQuery(insert_query)
-
-
 def sync_query(
     columns: typing.List[SqlId],
     key: typing.List[SqlId],

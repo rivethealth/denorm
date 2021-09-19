@@ -6,7 +6,7 @@ from .format import format
 from .formats.join import JoinRefresh, JoinTargetTable
 from .join_common import JoinTarget, Key
 from .sql import SqlQuery
-from .sql_query import insert_query, sync_query, upsert_query
+from .sql_query import sync_query, upsert_query
 
 
 class JoinTableTarget(JoinTarget):
@@ -32,26 +32,10 @@ FROM {self._table.sql}
             self._query, {"key": str(key_table), "table": table_id or ""}
         )
 
-        if self._table.refresh == JoinRefresh.FULL:
-            query = sync_query(
-                columns=self._table.columns or self._table.key,
-                key=self._table.key,
-                key_table=key_table,
-                query=formatted,
-                target=self._table.sql,
-            )
-        elif self._table.refresh == JoinRefresh.INSERT:
-            query = insert_query(
-                columns=self._table.columns or self._table.key,
-                query=formatted,
-                target=self._table.sql,
-            )
-        elif self._table.refresh == JoinRefresh.UPSERT:
-            query = upsert_query(
-                columns=self._table.columns or self._table.key,
-                key=self._table.key,
-                query=formatted,
-                target=self._table.sql,
-            )
-
-        return query
+        return sync_query(
+            columns=self._table.columns or self._table.key,
+            key=self._table.key,
+            key_table=key_table,
+            query=formatted,
+            target=self._table.sql,
+        )
