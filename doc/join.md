@@ -63,7 +63,7 @@ Deferring work involves overhead. It can be useful in a couple cases
 `id`
 
 The ID is used to name database objects. To prevent naming conflicts, the ID
-should be unique (within a schema) .
+should be unique within a schema.
 
 #### Key
 
@@ -125,6 +125,8 @@ See [Target table](#target-table-1).
 
 ### Target table
 
+The target table that will receive changes.
+
 #### Columns
 
 `columns`
@@ -136,12 +138,6 @@ The column names, in the same order as returned by the target query.
 `key`
 
 The column names of the unique key of the table. Used for asynchronous joins.
-
-#### Refresh
-
-`refresh`
-
-TODO
 
 #### Schema
 
@@ -169,6 +165,8 @@ The 16-bit
 [advisory lock](https://www.postgresql.org/docs/12/explicit-locking.html#ADVISORY-LOCKS)
 prefix to use for queueing, if the join is asynchronous. By default, the lock
 space is generated from the ID and table ID.
+
+The base lock ID is in the comment on the `lock` column.
 
 #### Join
 

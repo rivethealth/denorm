@@ -198,13 +198,6 @@
           "title": "Key",
           "type": ["array", "null"]
         },
-        "refresh": {
-          "default": "full",
-          "description": "Insert inserts. Full inserts, updates, and deletes. Insert only inserts. Upsert inserts and updates.",
-          "enum": ["full", "insert", "upsert"],
-          "title": "Refresh mode",
-          "type": "string"
-        },
         "schema": {
           "default": null,
           "description": "Schema of table. If null, the table is not schema-qualified.",

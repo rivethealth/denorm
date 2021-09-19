@@ -63,9 +63,6 @@ _Configuration for joining tables._
     - **Items** _(string)_
   - **`key`** _(['array', 'null'])_: Key columns. Default: `None`.
     - **Items** _(string)_
-  - **`refresh`** _(string)_: Insert inserts. Full inserts, updates, and
-    deletes. Insert only inserts. Upsert inserts and updates. Must be one of:
-    `['full', 'insert', 'upsert']`. Default: `full`.
   - **`schema`** _(string)_: Schema of table. If null, the table is not
     schema-qualified. Default: `None`.
   - **`name`** _(string)_: Name of table.

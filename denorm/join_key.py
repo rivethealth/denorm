@@ -52,12 +52,14 @@ class TargetRefresh(KeyConsumer):
         last_expr: typing.Optional[str] = None,
     ):
         if self._setup is None:
-            # or deps[0][1].join_mode == JoinJoinMode.ASYNC
             setup_sql = ""
         else:
             setup_sql = f"PERFORM {self._setup.sql}();"
 
         if self._lock:
+            # Ideally, there would be a runtime-check and only use the lock table
+            # if current_setting('transaction_isolation') == 'read committed'.
+            # However, this isn't set up well to implement.
             lock_table = self._structure.lock_table()
 
             inner = f"""
