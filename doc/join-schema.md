@@ -7,6 +7,9 @@ _Configuration for joining tables._
 - **`consistency`** _(string)_: Consistency level. Immediate applies at the end
   of the command. Deferred applies at the end of a transaction. Must be one of:
   `['deferred', 'immediate']`. Default: `immedidate`.
+- **`context`** _(array)_: PostgreSQL settings to propogate through async joins.
+  Default: `[]`.
+  - **Items** _(string)_
 - **`id`** _(string)_: ID for name mangling created objects.
 - **`lock`** _(boolean)_: Whether to lock before refreshing target. Default:
   `False`.

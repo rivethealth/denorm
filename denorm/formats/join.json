@@ -222,6 +222,15 @@
       "title": "Consistency",
       "type": "string"
     },
+    "context": {
+      "default": [],
+      "description": "PostgreSQL settings to propogate through async joins",
+      "items": {
+        "type": "string"
+      },
+      "title": "Context",
+      "type": "array"
+    },
     "id": {
       "description": "ID for name mangling created objects.",
       "title": "ID",

@@ -58,6 +58,13 @@ Deferring work involves overhead. It can be useful in a couple cases
   record and children and grandchildren) are affected in the same transaction.
 - Reducing lock duraton on target records.
 
+#### Context
+
+Context propogates PostgreSQL settings through async joins.
+
+Recall that custom settings must be two-part dot-delimited. See
+[Customized Options](https://www.postgresql.org/docs/13/runtime-config-custom.html).
+
 #### ID
 
 `id`

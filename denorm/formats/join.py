@@ -132,13 +132,14 @@ class JoinHook:
 class JoinConfig:
     id: str
     tables: typing.Dict[str, JoinTable]
-    target_table: typing.Optional[JoinTargetTable] = None
+    consistency: JoinConsistency = JoinConsistency.IMMEDIATE
+    context: typing.List[str] = dataclasses.field(default_factory=list)
     key: typing.Optional[typing.List[JoinKeyColumn]] = None
     lock: bool = False
-    consistency: JoinConsistency = JoinConsistency.IMMEDIATE
-    target_query: typing.Optional[str] = "TABLE ${key}"
     schema: typing.Optional[str] = None
     setup: typing.Optional[JoinHook] = None
+    target_query: typing.Optional[str] = "TABLE ${key}"
+    target_table: typing.Optional[JoinTargetTable] = None
 
 
 class JoinInvalid(Exception):

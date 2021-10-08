@@ -120,6 +120,7 @@ def _statements(config: JoinConfig):
 
         resolver = KeyResolver(
             action=refresh_action,
+            context=config.context,
             key=key.names,
             structure=structure,
             table_id=table.join,
@@ -127,6 +128,7 @@ def _statements(config: JoinConfig):
         )
 
         yield from create_queue(
+            context=config.context,
             id=config.id,
             resolver=resolver,
             structure=structure,
@@ -142,6 +144,7 @@ def _statements(config: JoinConfig):
 
         resolver = KeyResolver(
             action=action,
+            context=config.context,
             key=key.names,
             structure=structure,
             table_id=table_id,

@@ -70,6 +70,10 @@ class Structure:
         return self._sql_object(self._name("setup"))
 
 
+def context_column(column: str) -> str:
+    return SqlId(f"context_{column}")
+
+
 def local_column(column: str) -> str:
     return SqlId(f"local_{column}")
 

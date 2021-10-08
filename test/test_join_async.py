@@ -30,6 +30,7 @@ _SCHEMA_SQL = """
 """
 
 _SCHEMA_JSON = {
+    "context": ["context.example"],
     "id": "test",
     "tables": {
         "child": {

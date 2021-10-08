@@ -99,11 +99,13 @@ class KeyResolver:
         self,
         action: KeyConsumer,
         key: typing.List[str],
+        context: typing.List[str],
         structure: Structure,
         table_id: str,
         tables: typing.Dict[str, JoinTable],
     ):
         self._action = action
+        self._context = context
         self._key = key
         self._structure = structure
         self._tables = tables
@@ -151,6 +153,7 @@ class KeyResolver:
             from .join_async import enqueue_sql
 
             return enqueue_sql(
+                context=self._context,
                 id=last_id,
                 table=last_table,
                 structure=self._structure,
