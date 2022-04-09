@@ -62,6 +62,11 @@ properties:
     description: Schema for created objects.
     title: Schema
     type: [string, "null"]
+  shard:
+    default: false
+    description: Whether the table is sharded.
+    title: Shard
+    type: boolean
   source: { $ref: "#/definitions/table" }
   target: { $ref: "#/definitions/table" }
 required: [aggregates, groups, id]

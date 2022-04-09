@@ -18,17 +18,17 @@ class AggStructure:
             else SqlObject(name)
         )
 
-    def change_function(self) -> SqlObject:
-        return self._sql_object(self._name("change"))
+    def change1_function(self) -> SqlObject:
+        return self._sql_object(self._name("change1"))
+
+    def change2_function(self) -> SqlObject:
+        return self._sql_object(self._name("change2"))
 
     def insert_trigger(self) -> SqlObject:
         return self._sql_object(self._name("ins"))
 
-    def update_1_trigger(self) -> SqlObject:
-        return self._sql_object(self._name("upd1"))
-
-    def update_2_trigger(self) -> SqlObject:
-        return self._sql_object(self._name("upd2"))
+    def update_trigger(self) -> SqlObject:
+        return self._sql_object(self._name("upd"))
 
     def delete_trigger(self) -> SqlObject:
         return self._sql_object(self._name("del"))

@@ -24,6 +24,9 @@ def create_agg(io: AggIo):
 
 
 def _statements(config: AggConfig):
+    if config.shard and config.consistency == AggConsistency.DEFERRED:
+        raise RuntimeError("Deferred consistency cannot be used with sharding.")
+
     structure = AggStructure(config.schema, config.id)
 
     config.aggregates["_count"] = AggAggregate(value="sign * count(*)")
@@ -51,6 +54,7 @@ def _statements(config: AggConfig):
         filter=config.filter,
         groups=config.groups,
         id=config.id,
+        shard=config.shard,
         source=config.source,
         structure=structure,
         target=config.target,

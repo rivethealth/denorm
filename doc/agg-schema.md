@@ -1,27 +1,24 @@
 # Aggregate config
 
-_Configuration for aggregating a table._
+*Configuration for aggregating a table.*
 
 ## Properties
 
 - **`aggregates`**: Aggregates. Can contain additional properties.
-- **`consistency`** _(string)_: Consistency. Must be one of:
-  `['deferred', 'immediate']`. Default: `immediate`.
-- **`filter`** _(['string', 'null'])_: Row filter. Default: `None`.
+- **`consistency`** *(string)*: Consistency. Must be one of: `['deferred', 'immediate']`. Default: `immediate`.
+- **`filter`** *(['string', 'null'])*: Row filter. Default: `None`.
 - **`groups`**: Can contain additional properties.
-- **`id`** _(string)_: ID used to name-mangle.
-- **`schema`** _(['string', 'null'])_: Schema for created objects. Default:
-  `None`.
-- **`source`**: Refer to _#/definitions/table_.
-- **`target`**: Refer to _#/definitions/table_.
-
+- **`id`** *(string)*: ID used to name-mangle.
+- **`schema`** *(['string', 'null'])*: Schema for created objects. Default: `None`.
+- **`shard`** *(boolean)*: Whether the table is sharded. Default: `False`.
+- **`source`**: Refer to *#/definitions/table*.
+- **`target`**: Refer to *#/definitions/table*.
 ## Definitions
 
-- **`aggregate`** _(object)_: Cannot contain additional properties.
-  - **`combine`** _(['string', 'null'])_: Combining expression. If null,
-    defaults to existing.$name + excluding.$name. Default: `None`.
-  - **`value`** _(string)_
-- **`group`** _(string)_: Group expression.
+- **`aggregate`** *(object)*: Cannot contain additional properties.
+  - **`combine`** *(['string', 'null'])*: Combining expression. If null, defaults to existing.$name + excluding.$name. Default: `None`.
+  - **`value`** *(string)*
+- **`group`** *(string)*: Group expression.
 - **`table`**: Table.
-  - **`name`** _(string)_: Name.
-  - **`schema`** _(['string', 'null'])_: Schema. Default: `None`.
+  - **`name`** *(string)*: Name.
+  - **`schema`** *(['string', 'null'])*: Schema. Default: `None`.
