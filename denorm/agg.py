@@ -29,7 +29,7 @@ def _statements(config: AggConfig):
 
     structure = AggStructure(config.schema, config.id)
 
-    config.aggregates["_count"] = AggAggregate(value="sign * count(*)")
+    config.aggregates["_count"] = AggAggregate(value="sum(sign)")
 
     if config.consistency == AggConsistency.DEFERRED:
         yield from create_refresh_function(

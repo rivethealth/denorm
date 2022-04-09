@@ -25,7 +25,7 @@ _SCHEMA_JSON = {
     "groups": {"parent_id": "parent_id"},
     "aggregates": {
         "child_count": {
-            "value": "sign * count(*)",
+            "value": "sum(sign)",
         }
     },
 }

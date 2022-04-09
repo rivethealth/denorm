@@ -63,7 +63,7 @@ groups:
   author_id: author_id
 aggregates:
   book_count:
-    value: sign * count(*)
+    value: sum(sign)
 " \
   | yq \
   | denorm create-agg \

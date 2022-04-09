@@ -72,7 +72,7 @@ SELECT
 FROM {data} AS {SqlId(id)}
 {where}
 GROUP BY {sql_list(SqlNumber(i + 1) for i, _ in enumerate(groups))}
-HAVING sign * count(*) <> 0
+HAVING sum(sign) <> 0
     """.strip()
 
     if shard:
