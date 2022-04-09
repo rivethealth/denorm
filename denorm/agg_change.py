@@ -63,7 +63,7 @@ END IF;
         data = "_change"
         vars = """
 sign smallint := TG_ARGV[0]::smallint;
-        """
+        """.strip()
 
     query = f"""
 SELECT
