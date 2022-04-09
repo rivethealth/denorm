@@ -21,6 +21,7 @@ maintenance, materialized view
 - [Performance](#performance)
 - [Migration](#migration)
 - [Limitations](#limitations)
+- [Developing](#developing)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -98,3 +99,23 @@ migration scripts.
 
 Denorm mangles names for generated objects, Long IDs and table names may run
 into the PostgreSQL limit of 63 characters for identifiers.
+
+## Developing
+
+Install: `make install`
+
+Generate JSONSchema: `make schema`
+
+Test: `make test`
+
+Generate documentation: `make doc`
+
+Format: `make format`
+
+### Publish
+
+1. Update denorm/version.py.
+2. Create commit `Version <version>`.
+3. Tag `v<version>`.
+4. Push master branch and tag.
+5. Publish to PyPI: `make publish`.

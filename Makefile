@@ -93,7 +93,7 @@ install:
 .PHONY: package
 package: target/package.target
 
-upload: target/package-test.target
+publish: target/package-test.target
 	python3 -m twine upload target/package/*
 
 target/package.target: setup.py README.md $(PY_SRC)
