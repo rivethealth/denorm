@@ -104,7 +104,7 @@ INSERT INTO {target_table} ({sql_list(group_columns)}, {sql_list(aggregate_colum
 SELECT {sql_list(group_columns)}, {sql_list(aggregate_columns)}
 FROM locked
 WHERE ctid IS NULL;
-        """
+        """.strip()
     else:
         body = f"""
 INSERT INTO {target_table} AS existing (
