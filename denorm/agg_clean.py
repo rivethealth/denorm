@@ -18,7 +18,7 @@ def create_cleanup(
     cleanup_trigger = structure.cleanup_trigger()
     group_columns = [SqlId(group) for group in groups]
 
-    extra_critera = "AND t._count = 0"
+    extra_critera = " AND t._count = 0"
 
     yield f"""
 CREATE FUNCTION {cleanup_function} () RETURNS trigger
