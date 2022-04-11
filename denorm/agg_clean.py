@@ -8,11 +8,17 @@ from .sql import table_fields
 
 
 def create_cleanup(
-    id: str, groups: typing.Dict[str, str], structure: AggStructure, target: AggTable
+    id: str,
+    groups: typing.Dict[str, str],
+    shard: bool,
+    structure: AggStructure,
+    target: AggTable,
 ):
     cleanup_function = structure.cleanup_function()
     cleanup_trigger = structure.cleanup_trigger()
     group_columns = [SqlId(group) for group in groups]
+
+    extra_critera = "AND t._count = 0"
 
     yield f"""
 CREATE FUNCTION {cleanup_function} () RETURNS trigger
@@ -22,7 +28,7 @@ LANGUAGE plpgsql AS $$
     USING _new AS n
     WHERE
       ({table_fields(SqlId("t"), group_columns)}) = ({table_fields(SqlId("n"), group_columns)})
-      AND n._count = 0;
+      AND n._count = 0{extra_critera};
 
     RETURN NULL;
   END;

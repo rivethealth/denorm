@@ -61,5 +61,9 @@ def _statements(config: AggConfig):
     )
 
     yield from create_cleanup(
-        id=config.id, groups=config.groups, structure=structure, target=config.target
+        id=config.id,
+        groups=config.groups,
+        shard=config.shard,
+        structure=structure,
+        target=config.target,
     )
