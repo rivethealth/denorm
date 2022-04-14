@@ -30,6 +30,8 @@ def _statements(config: AggConfig):
     structure = AggStructure(config.schema, config.id)
 
     config.aggregates["_count"] = AggAggregate(value="sum(sign)")
+    if type(config.shard) == dict:
+        config.shard["_count"] = "sum(_count)"
 
     if config.consistency == AggConsistency.DEFERRED:
         yield from create_refresh_function(
