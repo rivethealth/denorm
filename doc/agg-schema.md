@@ -12,7 +12,7 @@ _Configuration for aggregating a table._
 - **`id`** _(string)_: ID used to name-mangle.
 - **`schema`** _(['string', 'null'])_: Schema for created objects. Default:
   `None`.
-- **`shard`** _(boolean)_: Whether the table is sharded. Default: `False`.
+- **`shard`**: Refer to _#/definitions/shard_.
 - **`source`**: Refer to _#/definitions/table_.
 - **`target`**: Refer to _#/definitions/table_.
 
@@ -23,6 +23,8 @@ _Configuration for aggregating a table._
     defaults to existing.$name + excluding.$name. Default: `None`.
   - **`value`** _(string)_
 - **`group`** _(string)_: Group expression.
+- **`shard`** _(['boolean', 'object'])_: Shard definition. Can contain
+  additional properties. Default: `False`.
 - **`table`**: Table.
   - **`name`** _(string)_: Name.
   - **`schema`** _(['string', 'null'])_: Schema. Default: `None`.

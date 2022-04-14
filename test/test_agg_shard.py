@@ -20,7 +20,9 @@ _SCHEMA_SQL = """
 
 _SCHEMA_JSON = {
     "id": "test",
-    "shard": True,
+    "shard": {
+        "child_count": "sum(child_count)",
+    },
     "source": {"name": "child"},
     "target": {"name": "parent_child_stat"},
     "groups": {"parent_id": "parent_id"},

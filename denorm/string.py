@@ -4,6 +4,4 @@ _LINE_RE = re.compile("^|(?<=\n)")
 
 
 def indent(str: str, count: int) -> str:
-    if not str:
-        return str
-    return re.sub(_LINE_RE, "  " * count, str)
+    return "\n".join("  " * count + line for line in str.split("\n"))

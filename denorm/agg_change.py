@@ -14,7 +14,7 @@ def _create_change_function(
     filter: typing.Optional[str],
     groups: typing.Dict[str, str],
     id: str,
-    shard: bool,
+    shard: typing.Union[bool, typing.Dict[str, str]],
     source: AggTable,
     structure: AggStructure,
     target: AggTable,

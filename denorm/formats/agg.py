@@ -61,7 +61,7 @@ class AggConfig:
     target: AggTable
     consistency: AggConsistency = AggConsistency.IMMEDIATE
     filter: typing.Optional[str] = None
-    shard: bool = False
+    shard: typing.Union[bool, typing.Dict[str, str]] = False
     schema: typing.Optional[str] = None
 
 

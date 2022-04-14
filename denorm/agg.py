@@ -2,7 +2,7 @@ import dataclasses
 import typing
 
 from .agg_change import create_change
-from .agg_clean import create_cleanup
+from .agg_clean import create_cleanup, create_compress
 from .agg_common import AggStructure
 from .agg_defer import create_refresh_function, create_setup_function
 from .formats.agg import AGG_DATA_JSON_FORMAT, AggAggregate, AggConfig, AggConsistency
@@ -59,6 +59,16 @@ def _statements(config: AggConfig):
         structure=structure,
         target=config.target,
     )
+
+    if type(config.shard) == dict:
+        yield from create_compress(
+            id=config.id,
+            groups=config.groups,
+            aggregates=config.shard,
+            source=config.source,
+            structure=structure,
+            target=config.target,
+        )
 
     yield from create_cleanup(
         id=config.id,

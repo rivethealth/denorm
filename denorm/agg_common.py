@@ -39,6 +39,9 @@ class AggStructure:
     def cleanup_trigger(self) -> SqlId:
         return self._name("cleanup")
 
+    def compress_function(self) -> SqlObject:
+        return self._sql_object(self._name("compress"))
+
     def refresh_constraint(self) -> SqlId:
         return SqlId(self._id)
 

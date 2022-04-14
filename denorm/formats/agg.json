@@ -25,6 +25,15 @@
       "title": "Group",
       "type": "string"
     },
+    "shard": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "default": false,
+      "description": "Shard definition.",
+      "title": "Shard",
+      "type": ["boolean", "object"]
+    },
     "table": {
       "description": "Table.",
       "properties": {
@@ -82,10 +91,7 @@
       "type": ["string", "null"]
     },
     "shard": {
-      "default": false,
-      "description": "Whether the table is sharded.",
-      "title": "Shard",
-      "type": "boolean"
+      "$ref": "#/definitions/shard"
     },
     "source": {
       "$ref": "#/definitions/table"
