@@ -76,34 +76,40 @@ HAVING sum(sign) <> 0
     """.strip()
 
     if shard:
+        # 1. aggregate changes
+        # 2. lock records where possible
+        # 3. update records
+        # 4. insert for records that have not been updated
+        # Note: #4 does require checking #3 to prevent consideration of locked
+        # dead records.
         body = f"""
 WITH
-  data ({sql_list(group_columns)}, {sql_list(aggregate_columns)}) AS (
-{indent(query, 2)}
-  ),
   locked AS (
-      SELECT t.ctid, d.*
-      FROM
-        data AS d
-        LEFT JOIN LATERAL (
-            SELECT t.ctid
-            FROM {target_table} AS t
-            WHERE ({table_fields(SqlId("d"), group_columns)}) = ({sql_list(group_columns)})
-            FOR UPDATE
-            SKIP LOCKED
-            LIMIT 1
-        ) AS t ON TRUE
+    SELECT *
+    FROM
+      (
+{indent(query, 4)}
+      ) AS d ({sql_list(group_columns + aggregate_columns)})
+      LEFT JOIN LATERAL (
+        SELECT ctid
+        FROM {target_table} AS t
+        WHERE ({table_fields(SqlId("d"), group_columns)}) = ({sql_list(group_columns)})
+        FOR UPDATE SKIP LOCKED
+        LIMIT 1
+      ) AS t ON TRUE
   ),
   update AS (
       UPDATE {target_table} AS existing
       SET {sql_list(f'{SqlId(col)} = {agg.combine_expression(col)}' for col, agg in aggregates.items())}
       FROM locked AS excluded
       WHERE existing.ctid = excluded.ctid
+      RETURNING excluded.ctid
   )
 INSERT INTO {target_table} ({sql_list(group_columns)}, {sql_list(aggregate_columns)})
 SELECT {sql_list(group_columns)}, {sql_list(aggregate_columns)}
-FROM locked
-WHERE ctid IS NULL;
+FROM locked AS l
+  LEFT JOIN update AS u ON l.ctid = u.ctid
+WHERE u.ctid IS NULL;
         """.strip()
     else:
         body = f"""
