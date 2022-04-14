@@ -67,7 +67,6 @@ def _statements(config: AggConfig):
             id=config.id,
             groups=config.groups,
             aggregates=config.shard,
-            source=config.source,
             structure=structure,
             target=config.target,
         )

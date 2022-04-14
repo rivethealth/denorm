@@ -54,7 +54,6 @@ def create_compress(
     id: str,
     groups: typing.Dict[str, str],
     aggregates: typing.Dict[str, str],
-    source: AggTable,
     structure: AggStructure,
     target: AggTable,
 ):
@@ -73,7 +72,7 @@ LANGUAGE plpgsql AS $$
     INSERT INTO {target.sql} ({sql_list(list(groups) + list(aggregates))})
     SELECT
         {sql_list(list(groups) + list(aggregates.values()))}
-    FROM {source.sql}
+    FROM data
     GROUP BY {sql_list([SqlNumber(i + 1) for i in range(len(groups))])};
 
     RETURN NULL;
