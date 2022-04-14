@@ -65,3 +65,6 @@ def test_agg(pg_database):
             cur.execute("SELECT * FROM parent_child_stat ORDER BY parent_id")
             result = cur.fetchall()
             assert result == [(1, 2, 2), (2, 1, 1)]
+
+        with transaction(conn) as cur:
+            cur.execute("SELECT test__compress()")

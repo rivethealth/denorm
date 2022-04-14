@@ -61,7 +61,7 @@ def create_compress(
     group_columns = [SqlId(group) for group in groups]
 
     yield f"""
-CREATE FUNCTION {compress_function} () RETURNS trigger
+CREATE FUNCTION {compress_function} () RETURNS void
 LANGUAGE plpgsql AS $$
   BEGIN
     WITH
@@ -74,8 +74,6 @@ LANGUAGE plpgsql AS $$
         {sql_list(list(groups) + list(aggregates.values()))}
     FROM data
     GROUP BY {sql_list([SqlNumber(i + 1) for i in range(len(groups))])};
-
-    RETURN NULL;
   END;
 $$
     """.strip()
