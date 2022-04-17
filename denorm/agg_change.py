@@ -79,7 +79,9 @@ SELECT
 FROM {data} AS {SqlId(id)}
 {where}
 GROUP BY {sql_list(SqlNumber(i + 1) for i, _ in enumerate(groups))}
-HAVING ({sql_list(agg.value for agg in aggregates.values())}) IS DISTINCT FROM ({sql_list(agg.identity for agg in aggregates.values())})
+HAVING
+  ({sql_list(agg.value for agg in aggregates.values())})
+  IS DISTINCT FROM ({sql_list(agg.identity for agg in aggregates.values())})
     """.strip()
 
     if shard:
@@ -155,21 +157,21 @@ COMMENT ON FUNCTION {change_function} IS {SqlString(f'Handle changes for {id}')}
         yield f"""
 CREATE TRIGGER {update_trigger} AFTER UPDATE ON {source.sql}
 REFERENCING OLD TABLE AS _change1 NEW TABLE AS _change2
-FOR EACH STATEMENT EXECUTE PROCEDURE {change_function}();
+FOR EACH STATEMENT EXECUTE PROCEDURE {change_function}()
         """.strip()
     else:
         delete_trigger = structure.delete_trigger()
         yield f"""
 CREATE TRIGGER {delete_trigger} AFTER DELETE ON {source.sql}
 REFERENCING OLD TABLE AS _change
-FOR EACH STATEMENT EXECUTE PROCEDURE {change_function}('-1');
+FOR EACH STATEMENT EXECUTE PROCEDURE {change_function}('-1')
         """.strip()
 
         insert_trigger = structure.insert_trigger()
         yield f"""
 CREATE TRIGGER {insert_trigger} AFTER INSERT ON {source.sql}
 REFERENCING NEW TABLE AS _change
-FOR EACH STATEMENT EXECUTE PROCEDURE {change_function}('1');
+FOR EACH STATEMENT EXECUTE PROCEDURE {change_function}('1')
         """.strip()
 
 

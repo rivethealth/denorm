@@ -72,7 +72,9 @@ LANGUAGE plpgsql AS $$
         {sql_list(list(groups) + list(aggregates.values()))}
     FROM data
     GROUP BY {sql_list([SqlNumber(i + 1) for i in range(len(groups))])}
-    HAVING sum(_count) <> 0;
+    HAVING
+      ({sql_list(agg.value for agg in aggregates.values())})
+      IS DISTINCT FROM ({sql_list(agg.identity for agg in aggregates.values())})
   END;
 $$
     """.strip()
