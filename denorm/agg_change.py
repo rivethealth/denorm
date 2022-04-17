@@ -79,9 +79,7 @@ SELECT
 FROM {data} AS {SqlId(id)}
 {where}
 GROUP BY {sql_list(SqlNumber(i + 1) for i, _ in enumerate(groups))}
-HAVING
-  ({sql_list(agg.value for agg in aggregates.values())})
-  IS DISTINCT FROM ({sql_list(agg.identity for agg in aggregates.values())})
+HAVING ({sql_list(agg.value for agg in aggregates.values())}) IS DISTINCT FROM ({sql_list(agg.identity for agg in aggregates.values())})
     """.strip()
 
     if shard:

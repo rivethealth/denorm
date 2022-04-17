@@ -64,9 +64,10 @@ def _statements(config: AggConfig):
 
     if type(config.shard) == dict:
         yield from create_compress(
-            id=config.id,
+            aggregates=config.aggregates,
             groups=config.groups,
-            aggregates=config.shard,
+            id=config.id,
+            shard=config.shard,
             structure=structure,
             target=config.target,
         )

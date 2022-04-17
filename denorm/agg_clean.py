@@ -3,7 +3,7 @@ import typing
 from pg_sql import SqlId, SqlNumber, SqlString, sql_list
 
 from .agg_common import AggStructure
-from .formats.agg import AggTable
+from .formats.agg import AggAggregate, AggTable
 from .sql import table_fields
 
 
@@ -50,8 +50,9 @@ COMMENT ON TRIGGER {cleanup_trigger} ON {target.sql} IS {SqlString(f'Cleanup rec
 
 def create_compress(
     id: str,
+    aggregates: typing.Dict[str, AggAggregate],
     groups: typing.Dict[str, str],
-    aggregates: typing.Dict[str, str],
+    shard: typing.Dict[str, str],
     structure: AggStructure,
     target: AggTable,
 ):
@@ -67,14 +68,12 @@ LANGUAGE plpgsql AS $$
         DELETE FROM {target.sql}
         RETURNING *
       )
-    INSERT INTO {target.sql} ({sql_list(list(groups) + list(aggregates))})
+    INSERT INTO {target.sql} ({sql_list(list(groups) + list(shard))})
     SELECT
-        {sql_list(list(groups) + list(aggregates.values()))}
+        {sql_list(list(groups) + list(shard.values()))}
     FROM data
     GROUP BY {sql_list([SqlNumber(i + 1) for i in range(len(groups))])}
-    HAVING
-      ({sql_list(agg.value for agg in aggregates.values())})
-      IS DISTINCT FROM ({sql_list(agg.identity for agg in aggregates.values())})
+    HAVING ({sql_list(shard.values())}) IS DISTINCT FROM ({sql_list(aggregates[name].identity for name in shard)});
   END;
 $$
     """.strip()
