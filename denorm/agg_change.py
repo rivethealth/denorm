@@ -26,6 +26,12 @@ def _create_change_function(
     group_columns = [SqlId(col) for col in groups]
     aggregate_columns = [SqlId(col) for col in aggregates]
 
+    setup = f"""
+IF NOT EXISTS (TABLE {"_change1" if update else "_change"}) THEN
+  RETURN NULL;
+END IF;
+    """.strip()
+
     where = f"WHERE {filter}" if filter is not None else ""
     if consistency == AggConsistency.DEFERRED:
         setup_function = structure.setup_function()
@@ -33,6 +39,8 @@ def _create_change_function(
         target_table = structure.tmp_table()
         order = ""
         setup = f"""
+{setup}
+
 PERFORM {setup_function}();
         """.strip()
         finalize = f"""
@@ -45,7 +53,6 @@ END IF;
     elif consistency == AggConsistency.IMMEDIATE:
         target_table = target.sql
         order = f"ORDER BY {sql_list(SqlNumber(i + 1) for i, _ in enumerate(groups))}"
-        setup = ""
         finalize = ""
 
     if update:
@@ -72,7 +79,7 @@ SELECT
 FROM {data} AS {SqlId(id)}
 {where}
 GROUP BY {sql_list(SqlNumber(i + 1) for i, _ in enumerate(groups))}
-HAVING sum(sign) <> 0
+HAVING ({sql_list(agg.value for agg in aggregates.values())}) IS DISTINCT FROM ({sql_list(agg.identity for agg in aggregates.values())})
     """.strip()
 
     if shard:

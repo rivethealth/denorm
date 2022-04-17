@@ -12,6 +12,12 @@
           "title": "Combine",
           "type": ["string", "null"]
         },
+        "identity": {
+          "default": "0",
+          "description": "Additive identity",
+          "title": "Identity",
+          "type": "string"
+        },
         "value": {
           "title": "Expression",
           "type": "string"
@@ -30,7 +36,7 @@
         "type": "string"
       },
       "default": false,
-      "description": "Shard definition.",
+      "description": "Shard definition. If false, sharding is not used. If true, sharding is used. If an object, a compress function will be created.",
       "title": "Shard",
       "type": ["boolean", "object"]
     },

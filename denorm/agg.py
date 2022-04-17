@@ -70,11 +70,11 @@ def _statements(config: AggConfig):
             structure=structure,
             target=config.target,
         )
-
-    yield from create_cleanup(
-        id=config.id,
-        groups=config.groups,
-        shard=config.shard,
-        structure=structure,
-        target=config.target,
-    )
+    elif not config.shard:
+        yield from create_cleanup(
+            id=config.id,
+            groups=config.groups,
+            shard=config.shard,
+            structure=structure,
+            target=config.target,
+        )

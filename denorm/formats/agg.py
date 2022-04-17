@@ -21,6 +21,7 @@ class AggConsistency(enum.Enum):
 class AggAggregate:
     value: str
     combine: typing.Optional[str] = None
+    identity: str = "0"
 
     def combine_expression(self, name):
         return (

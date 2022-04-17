@@ -21,10 +21,12 @@ _Configuration for aggregating a table._
 - **`aggregate`** _(object)_: Cannot contain additional properties.
   - **`combine`** _(['string', 'null'])_: Combining expression. If null,
     defaults to existing.$name + excluding.$name. Default: `None`.
+  - **`identity`** _(string)_: Additive identity. Default: `0`.
   - **`value`** _(string)_
 - **`group`** _(string)_: Group expression.
-- **`shard`** _(['boolean', 'object'])_: Shard definition. Can contain
-  additional properties. Default: `False`.
+- **`shard`** _(['boolean', 'object'])_: Shard definition. If false, sharding is
+  not used. If true, sharding is used. If an object, a compress function will be
+  created. Can contain additional properties. Default: `False`.
 - **`table`**: Table.
   - **`name`** _(string)_: Name.
   - **`schema`** _(['string', 'null'])_: Schema. Default: `None`.
