@@ -252,7 +252,7 @@ def enqueue_sql(
 
     if context:
         settings = sql_list(
-            f"coalesce(current_setting({SqlString(f'context.{setting}')}, true), '')"
+            f"coalesce(current_setting({SqlString(setting)}, true), '')"
             for setting in context
         )
         key_query = f"""
