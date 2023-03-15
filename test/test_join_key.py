@@ -24,21 +24,21 @@ _SCHEMA_JSON = {
     "id": "test",
     "tables": {
         "child": {
-            "name": "child",
-            "schema": "public",
-            "targetKey": ["child.id"],
+            "tableSchema": "public",
+            "tableName": "child",
+            "destinationKeyExpr": ["child.id"],
         },
         "parent": {
-            "join": "child",
+            "tableSchema": "public",
+            "tableName": "parent",
+            "joinTargetTable": "child",
             "joinOn": "parent.id = child.parent_id",
-            "name": "parent",
-            "schema": "public",
         },
     },
-    "targetTable": {
-        "key": ["id"],
-        "name": "child_key",
-        "schema": "public",
+    "destinationTable": {
+        "tableSchema": "public",
+        "tableName": "child_key",
+        "tableKey": ["id"],
     },
 }
 

@@ -1,6 +1,8 @@
 *.egg-info/
 *.log
 *.pyc
+*.un~
+*.swp
 
 .vscode/
 __pycache__/

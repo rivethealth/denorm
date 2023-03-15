@@ -56,18 +56,18 @@ class JoinKeyColumn:
 )
 @dataclasses.dataclass
 class JoinTargetTable:
-    name: str
-    columns: typing.Optional[typing.List[str]] = None
-    key: typing.Optional[typing.List[str]] = None
-    schema: typing.Optional[str] = None
+    table_name: str
+    table_columns: typing.Optional[typing.List[str]] = None
+    table_key: typing.Optional[typing.List[str]] = None
+    table_schema: typing.Optional[str] = None
     refresh: JoinRefresh = JoinRefresh.FULL
 
     @property
     def sql(self) -> SqlObject:
         return (
-            SqlObject(SqlId(self.schema), SqlId(self.name))
-            if self.schema is not None
-            else SqlObject(SqlId(self.name))
+            SqlObject(SqlId(self.table_schema), SqlId(self.table_name))
+            if self.table_schema is not None
+            else SqlObject(SqlId(self.table_name))
         )
 
 
@@ -76,19 +76,18 @@ class JoinTargetTable:
 )
 @dataclasses.dataclass
 class JoinTable:
-    columns: typing.Optional[typing.List[JoinColumn]] = None
-    name: typing.Optional[str] = None
-    join: typing.Optional[str] = None
-    join_key: typing.Optional[typing.List[str]] = None
+    table_columns: typing.Optional[typing.List[JoinColumn]] = None
+    table_name: typing.Optional[str] = None
+    join_target_table: typing.Optional[str] = None
+    join_target_key: typing.Optional[typing.List[str]] = None
     join_on: typing.Optional[str] = None
     join_mode: JoinJoinMode = JoinJoinMode.SYNC
     join_other: typing.Optional[str] = None
-    key: typing.Optional[typing.List[JoinKeyColumn]] = None
-    key_type: typing.Optional[typing.List[str]] = None
+    table_key: typing.Optional[typing.List[JoinKeyColumn]] = None
     refresh_function: bool = False
     lock_id: typing.Optional[int] = None
-    schema: typing.Optional[str] = None
-    target_key: typing.Optional[typing.List[str]] = None
+    table_schema: typing.Optional[str] = None
+    destination_key_expr: typing.Optional[typing.List[str]] = None
 
     def __eq__(self, other):
         return self is other
@@ -98,13 +97,13 @@ class JoinTable:
 
     @property
     def sql(self) -> SqlObject:
-        if self.name is None:
+        if self.table_name is None:
             return "(SELECT false AS _)"
 
         return (
-            SqlObject(SqlId(self.schema), SqlId(self.name))
-            if self.schema is not None
-            else SqlObject(SqlId(self.name))
+            SqlObject(SqlId(self.table_schema), SqlId(self.table_name))
+            if self.table_schema is not None
+            else SqlObject(SqlId(self.table_name))
         )
 
 
@@ -113,15 +112,15 @@ class JoinTable:
 )
 @dataclasses.dataclass(frozen=True)
 class JoinHook:
-    name: str
-    schema: typing.Optional[str] = None
+    table_name: str
+    table_schema: typing.Optional[str] = None
 
     @property
     def sql(self) -> SqlObject:
         return (
-            SqlObject(SqlId(self.schema), SqlId(self.name))
-            if self.schema is not None
-            else SqlObject(SqlId(self.name))
+            SqlObject(SqlId(self.table_schema), SqlId(self.table_name))
+            if self.table_schema is not None
+            else SqlObject(SqlId(self.table_name))
         )
 
 
@@ -138,8 +137,8 @@ class JoinConfig:
     lock: bool = False
     schema: typing.Optional[str] = None
     setup: typing.Optional[JoinHook] = None
-    target_query: typing.Optional[str] = "TABLE ${key}"
-    target_table: typing.Optional[JoinTargetTable] = None
+    destination_query: typing.Optional[str] = "TABLE ${key}"
+    destination_table: typing.Optional[JoinTargetTable] = None
 
 
 class JoinInvalid(Exception):
@@ -150,7 +149,7 @@ class JoinInvalid(Exception):
 def validate_join(join: JoinConfig):
     for table_id, table in join.tables.items():
         if table.refresh_function and any(
-            column.type is None for column in table.key or []
+            column.type is None for column in table.table_key or []
         ):
             raise JoinInvalid(
                 f"Table {table_id} refreshFunction required types for columns"

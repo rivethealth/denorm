@@ -19,7 +19,7 @@ def create_queue(
     context: typing.List[str],
 ):
     table = tables[table_id]
-    dep = table.join
+    dep = table.join_target_table
     foreign_table = tables[dep]
 
     if table.lock_id is not None:
@@ -31,10 +31,10 @@ def create_queue(
 
     queue_table = structure.queue_table(table_id)
 
-    column_names = [column.name for column in table.key] if table.key else ["_"]
+    column_names = [column.name for column in table.table_key] if table.table_key else ["_"]
 
     local_columns = [local_column(column) for column in column_names]
-    foreign_columns = [foreign_column(column) for column in table.join_key]
+    foreign_columns = [foreign_column(column) for column in table.join_target_key]
     context_columns = [context_column(setting) for setting in context]
 
     columns = (
@@ -44,7 +44,7 @@ def create_queue(
         ]
         + [
             f"{SqlObject(SqlId('f'), SqlId(column))} AS {foreign_column(column)}"
-            for column in table.join_key
+            for column in table.join_target_key
         ]
         + [f"NULL::text AS {context_column(setting)}" for setting in context]
         + ["NULL::bigint AS seq", "NULL::bigint AS lock", "NULL::bigint AS count"]
@@ -79,7 +79,7 @@ COMMENT ON TABLE {queue_table} IS {SqlString(f"Asynchronous processing of change
 COMMENT ON COLUMN {queue_table}.{local_column(column)} IS {SqlString(f"{table.sql} key: {SqlId(column)}")}
 """
 
-    for column in table.join_key:
+    for column in table.join_target_key:
         yield f"""
 COMMENT ON COLUMN {queue_table}.{foreign_column(column)} IS {SqlString(f"{foreign_table.sql} iterator: {SqlId(column)}")}
 """
@@ -109,16 +109,16 @@ CREATE INDEX ON {queue_table} (seq)
     get_item = f"""
 SELECT
   {table_fields(item, local_columns)},
-  {table_fields(SqlId("k"), [SqlId(column) for column in table.join_key])},
+  {table_fields(SqlId("k"), [SqlId(column) for column in table.join_target_key])},
   {sql_list(new_fields)}
 INTO _new_item
 FROM {SqlObject(foreign_key_table)} AS k
-ORDER BY {table_fields(SqlId("k"), table.join_key)} DESC
+ORDER BY {table_fields(SqlId("k"), table.join_target_key)} DESC
     """.strip()
 
     if table.join_on is not None:
         join = f"""
-JOIN (VALUES ({table_fields(item, local_columns)})) AS {SqlId(table_id)} ({sql_list(SqlId(col.name) for col in table.key)})
+JOIN (VALUES ({table_fields(item, local_columns)})) AS {SqlId(table_id)} ({sql_list(SqlId(col.name) for col in table.table_key)})
 ON {table.join_on}
         """.strip()
     else:
@@ -128,7 +128,7 @@ ON {table.join_on}
 SELECT {SqlId(dep)}.*
 FROM {foreign_table.sql} AS {SqlId(dep)}
 {join}
-ORDER BY {sql_list(SqlObject(SqlId(dep), SqlId(name)) for name in table.join_key)}
+ORDER BY {sql_list(SqlObject(SqlId(dep), SqlId(name)) for name in table.join_target_key)}
 LIMIT max_records
     """.strip()
     gather1 = resolver.sql(
@@ -141,8 +141,8 @@ LIMIT max_records
 SELECT {SqlId(dep)}.*
 FROM {foreign_table.sql} AS {SqlId(dep)}
 {join}
-WHERE ({table_fields(item, foreign_columns)}) < ({table_fields(SqlId(dep), (SqlId(column) for column in table.join_key))})
-ORDER BY {sql_list(SqlObject(SqlId(dep), SqlId(name)) for name in table.join_key)}
+WHERE ({table_fields(item, foreign_columns)}) < ({table_fields(SqlId(dep), (SqlId(column) for column in table.join_target_key))})
+ORDER BY {sql_list(SqlObject(SqlId(dep), SqlId(name)) for name in table.join_target_key)}
 LIMIT max_records
     """.strip()
     gather2 = resolver.sql(
@@ -187,7 +187,7 @@ LANGUAGE plpgsql AS $$
 
 {indent(set_context, 2)}
 
-    IF ({table_fields(item, (foreign_column(column) for column in table.join_key))}) IS NULL THEN
+    IF ({table_fields(item, (foreign_column(column) for column in table.join_target_key))}) IS NULL THEN
       -- if there is no iterator, start at the beginning
 {indent(gather1, 3)}
     ELSE
@@ -239,13 +239,13 @@ def enqueue_sql(
 ):
     queue_table = structure.queue_table(id)
 
-    column_names = [column.name for column in table.key] if table.key else ["_"]
+    column_names = [column.name for column in table.table_key] if table.table_key else ["_"]
     local_columns = [local_column(column) for column in column_names]
     context_columns = [context_column(setting) for setting in context]
 
-    if table.key:
+    if table.table_key:
         order = (
-            f"ORDER BY {sql_list(SqlNumber(i + 1) for i, _ in enumerate(table.key))}"
+            f"ORDER BY {sql_list(SqlNumber(i + 1) for i, _ in enumerate(table.table_key))}"
         )
     else:
         order = ""
@@ -267,7 +267,7 @@ INSERT INTO {queue_table} ({sql_list(local_columns + context_columns)})
 {key_query}
 {order}
 ON CONFLICT ({sql_list(local_columns + context_columns)}) DO UPDATE
-  SET {update_excluded(foreign_column(column) for column in table.join_key)},
+  SET {update_excluded(foreign_column(column) for column in table.join_target_key)},
     count = excluded.count,
     seq = excluded.seq
     """.strip()
