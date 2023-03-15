@@ -113,8 +113,8 @@ class KeyResolver:
 
         dep_ids = closure(
             [table_id],
-            lambda id: [tables[id].join]
-            if tables[id].join_mode == JoinJoinMode.SYNC and tables[id].join
+            lambda id: [tables[id].join_target_table]
+            if tables[id].join_mode == JoinJoinMode.SYNC and tables[id].join_target_table
             else [],
         )
         self._deps = [(id, tables[id]) for id in dep_ids]
@@ -129,13 +129,13 @@ class KeyResolver:
         for i, (dep_id, dep) in enumerate(reversed(self._deps)):
             table_sql = root if i == len(self._deps) - 1 else str(dep.sql)
 
-            if dep.target_key is not None:
-                key_query += f"SELECT DISTINCT {sql_list(f'{k} AS {SqlId(t)}' for t, k in zip(self._key, dep.target_key))}"
+            if dep.destination_key_expr is not None:
+                key_query += f"SELECT DISTINCT {sql_list(f'{k} AS {SqlId(t)}' for t, k in zip(self._key, dep.destination_key_expr))}"
                 key_query += f"\nFROM"
                 key_query += f"\n  {table_sql} AS {SqlId(dep_id)}"
             elif dep.join_mode == JoinJoinMode.ASYNC:
-                if dep.key:
-                    dep_columns = [column.sql for column in dep.key]
+                if dep.table_key:
+                    dep_columns = [column.sql for column in dep.table_key]
                     key_query += (
                         f"SELECT DISTINCT {table_fields(SqlId(dep_id), dep_columns)}"
                     )

@@ -39,26 +39,20 @@ definitions:
     additionalProperties: false
     description: Source table.
     dependencies:
-      joinOn: [join]
+      joinOn: [joinTargetTable]
     allOf:
       - oneOf:
-          - required: [targetKey]
-            not: { required: [join] }
-          - required: [join]
-            not: { required: [targetKey] }
+          - required: [destinationKeyExpr]
+            not: { required: [joinTargetTable] }
+          - required: [joinTargetTable]
+            not: { required: [destinationKeyExpr] }
       - oneOf:
           - not:
               properties:
                 joinMode: { enum: [async] }
               required: [joinMode]
-          - required: [joinKey]
+          - required: [joinTargetKey]
     properties:
-      columns:
-        items: { $ref: "#/definitions/column" }
-        default: null
-        description: Columns to select from table.
-        title: Columns
-        type: ["null", array]
       lockId:
         default: null
         description:
@@ -68,20 +62,46 @@ definitions:
         minimum: -32678
         title: Lock ID
         type: [integer, "null"]
-      join:
+      tableSchema:
+        default: None
+        description: Name of schema.
+        title: Schema
+        type: string
+      tableName:
+        description: Name of table.
+        title: Table name
+        type: string
+      tableKey:
+        default: null
+        description: Unique key for the table.
+        items: { $ref: "#/definitions/keyColumn" }
+        title: key
+        type: [array, "null"]
+      tableColumns:
+        items: { $ref: "#/definitions/column" }
+        default: null
+        description: Columns to select from table.
+        title: Columns
+        type: ["null", array]
+      joinTargetTable:
         default: null
         description: IDs of dependency table.
         title: Join dependency
         type: [string, "null"]
-      joinKey:
+      joinTargetKey:
         default: null
         description: Unique key for foreign table.
         items: { type: string }
         title: Join key
         type: [array, "null"]
+      joinOn:
+        default: null
+        description: SQL expression to join to dependency.
+        title: Dependency join
+        type: [string, "null"]
       joinMode:
         default: sync
-        description: Mode of dependency join.
+        description: Mode of dependency join. Large many to one should use 'async'
         enum: [async, sync]
         title: Join consistency
         type: [string, "null"]
@@ -90,66 +110,46 @@ definitions:
         description: Expressions to add to join.
         title: Join other
         type: [string, "null"]
-      joinOn:
-        default: null
-        description: SQL expression to join to dependency.
-        title: Dependency join
-        type: [string, "null"]
-      key:
-        default: null
-        description: Unique key.
-        items: { $ref: "#/definitions/keyColumn" }
-        title: key
-        type: [array, "null"]
-      name:
-        description: Name of table.
-        title: Name
-        type: string
       refreshFunction:
         default: false
         description: Whether to generate a refresh function.
         title: Refresh function
         type: boolean
-      schema:
-        default: None
-        description: Name of schema.
-        title: Schema
-        type: string
-      targetKey:
+      destinationKeyExpr:
         default: null
-        description: SQL expressions for target key values.
+        description: SQL expressions for this table's columns that make up the destination table's key columns ([this table name].[column name]).
         items: { type: string }
         title: key
         type: [array, "null"]
     type: object
     title: Table
-  targetTable:
-    description: Target table.
+  destinationTable:
+    description: Destination table where denormalized data will be stored.
     properties:
-      columns:
-        default: null
-        description: Columns.
-        items: { type: string }
-        title: Columns
-        type: [array, "null"]
-      key:
-        default: null
-        description: Key columns
-        items: { type: string }
-        title: Key
-        type: [array, "null"]
-      schema:
+      tableSchema:
         default: null
         description:
           Schema of table. If null, the table is not schema-qualified.
         title: Schema
         type: string
-      name:
+      tableName:
         description: Name of table.
         title: Name
         type: string
-    required: [name]
-    title: Target table
+      tableKey:
+        default: null
+        description: Key columns
+        items: { type: string }
+        title: Key
+        type: [array, "null"]
+      tableColumns:
+        default: null
+        description: Columns. Must match columns from destinationQuery select (?)
+        items: { type: string }
+        title: Columns
+        type: [array, "null"]
+    required: [tableName]
+    title: Destination table
 properties:
   consistency:
     default: immedidate
@@ -196,12 +196,12 @@ properties:
     description: Map from ID to table.
     title: Tables
     type: object
-  targetQuery:
+  destinationQuery:
     default: TABLE ${key}
-    description: Query to populate the target table.
+    description: Query to populate the destination table columns. If no table is specified, destination query could still be a function call or something else.
     title: Query
     type: [string, "null"]
-  targetTable: { $ref: "#/definitions/targetTable" }
+  destinationTable: { $ref: "#/definitions/destinationTable" }
 required: [id, tables]
 title: Join config
 type: object

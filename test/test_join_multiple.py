@@ -45,37 +45,37 @@ _SCHEMA_JSON = {
     "id": "test",
     "tables": {
         "child": {
-            "name": "child",
-            "targetKey": ["child.id"],
+            "tableName": "child",
+            "destinationKeyExpr": ["child.id"],
         },
         "grandchild": {
-            "name": "grandchild",
-            "targetKey": ["grandchild.child_id"],
+            "tableName": "grandchild",
+            "destinationKeyExpr": ["grandchild.child_id"],
         },
         "other": {
-            "name": "other",
-            "join": "grandchild",
+            "tableName": "other",
+            "joinTargetTable": "grandchild",
             "joinOn": "other.id = grandchild.other_id",
         },
         "other_override": {
-            "name": "other_override",
-            "join": "grandchild",
+            "tableName": "other_override",
+            "joinTargetTable": "grandchild",
             "joinOn": "(other_override.parent_id, other_override.other_id) = (child.parent_id, grandchild.other_id)",
             "joinOther": "JOIN child AS child ON child.id = grandchild.child_id",
         },
         "parent": {
-            "join": "child",
+            "tableName": "parent",
+            "joinTargetTable": "child",
             "joinOn": "parent.id = child.parent_id",
-            "name": "parent",
         },
     },
-    "targetTable": {
-        "key": ["id"],
-        "columns": ["id", "parent_name", "other_names"],
-        "name": "child_full",
-        "schema": "public",
+    "destinationTable": {
+        "tableKey": ["id"],
+        "tableColumns": ["id", "parent_name", "other_names"],
+        "tableName": "child_full",
+        "tableSchema": "public",
     },
-    "targetQuery": """
+    "destinationQuery": """
         SELECT c.id, p.name, gc.names
         FROM ${key} AS d
             JOIN child c ON d.id = c.id

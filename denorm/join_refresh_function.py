@@ -15,9 +15,9 @@ def param_name(name) -> SqlId:
 def create_refresh_function(
     structure: Structure, resolver: KeyResolver, table_id: str, table: JoinTable
 ):
-    if table.key:
+    if table.table_key:
         columns = sql_list(
-            f"{param_name(column.name)} AS {column.sql}" for column in table.key
+            f"{param_name(column.name)} AS {column.sql}" for column in table.table_key
         )
         key_query = f"SELECT {columns}"
     else:
@@ -29,7 +29,7 @@ def create_refresh_function(
     function = structure.refresh_table_function(table_id)
 
     params = sql_list(
-        f"{param_name(column.name)} {column.type}" for column in (table.key or [])
+        f"{param_name(column.name)} {column.type}" for column in (table.table_key or [])
     )
     yield f"""
 CREATE FUNCTION {function}({params}) RETURNS void
@@ -40,7 +40,7 @@ LANGUAGE plpgsql AS $$
 $$
     """.strip()
 
-    comment = SqlString(f"Recalculate, based on {table.join}")
+    comment = SqlString(f"Recalculate, based on {table.join_target_table}")
     yield f"""
 COMMENT ON FUNCTION {function} IS {comment}
     """.strip()

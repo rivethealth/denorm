@@ -19,12 +19,12 @@ class JoinTableTarget(JoinTarget):
         self._query = query
 
     def key(self) -> typing.Optional[Key]:
-        if self._table.key:
+        if self._table.table_key:
             definition = f"""
-SELECT {sql_list(self._table.key)}
+SELECT {sql_list(self._table.table_key)}
 FROM {self._table.sql}
             """.strip()
-            names = self._table.key
+            names = self._table.table_key
             return Key(definition=definition, names=names)
 
     def sql(self, key_table: SqlObject, table_id: typing.Optional[str]) -> SqlQuery:
@@ -33,8 +33,8 @@ FROM {self._table.sql}
         )
 
         return sync_query(
-            columns=self._table.columns or self._table.key,
-            key=self._table.key,
+            columns=self._table.table_columns or self._table.table_key,
+            key=self._table.table_key,
             key_table=key_table,
             query=formatted,
             target=self._table.sql,

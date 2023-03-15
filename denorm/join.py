@@ -71,10 +71,10 @@ def create_join(io: JoinIo):
 
 
 def _target(config: JoinConfig) -> JoinTarget:
-    if config.target_table:
-        return JoinTableTarget(config.target_table, config.target_query)
+    if config.destination_table:
+        return JoinTableTarget(config.destination_table, config.destination_query)
     else:
-        return JoinPlainTarget(config.target_query)
+        return JoinPlainTarget(config.destination_query)
 
 
 def _statements(config: JoinConfig):
@@ -89,7 +89,7 @@ def _statements(config: JoinConfig):
 
     if config.lock:
         yield from create_lock_table(
-            structure=structure, key=key, target=config.target_table
+            structure=structure, key=key, target=config.destination_table
         )
 
     refresh_action = TargetRefresh(
@@ -110,7 +110,7 @@ def _statements(config: JoinConfig):
         yield from create_setup_function(
             structure=structure,
             id=config.id,
-            target=config.target_table,
+            target=config.destination_table,
             key=key,
         )
 
@@ -123,7 +123,7 @@ def _statements(config: JoinConfig):
             context=config.context,
             key=key.names,
             structure=structure,
-            table_id=table.join,
+            table_id=table.join_target_table,
             tables=config.tables,
         )
 
@@ -159,7 +159,7 @@ def _statements(config: JoinConfig):
                 table_id=table_id,
             )
 
-        if table.name is not None:
+        if table.table_name is not None:
             yield from create_change(
                 id=config.id,
                 resolver=resolver,
