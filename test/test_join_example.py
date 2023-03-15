@@ -36,25 +36,25 @@ _SCHEMA_JSON = {
     "schema": "public",
     "tables": {
         "author": {
-            "join": "book_author",
+            "tableName": "book_author",
+            "tableSchema": "public",
+            "joinTargetTable": "book_author",
             "joinOn": "author.id = book_author.author_id",
-            "name": "book_author",
-            "schema": "public",
         },
-        "book": {"name": "book", "schema": "public", "targetKey": ["book.id"]},
+        "book": {"tableName": "book", "tableSchema": "public", "destinationKeyExpr": ["book.id"]},
         "book_author": {
-            "name": "book_author",
-            "schema": "public",
-            "targetKey": ["book_author.book_id"],
+            "tableName": "book_author",
+            "tableSchema": "public",
+            "destinationKeyExpr": ["book_author.book_id"],
         },
     },
-    "targetTable": {
-        "columns": ["id", "title", "author_names"],
-        "name": "book_full",
-        "schema": "public",
-        "key": ["id"],
+    "destinationTable": {
+        "tableColumns": ["id", "title", "author_names"],
+        "tableName": "book_full",
+        "tableSchema": "public",
+        "tableKey": ["id"],
     },
-    "targetQuery": """
+    "destinationQuery": """
     SELECT
         b.id,
         b.title,

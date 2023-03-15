@@ -27,18 +27,18 @@ _SCHEMA_JSON = {
     "id": "test",
     "tables": {
         "child": {
-            "name": "child",
-            "schema": "public",
-            "targetKey": ["child.id"],
+            "tableSchema": "public",
+            "tableName": "child",
+            "destinationKeyExpr": ["child.id"],
         },
         "parent": {
-            "join": "child",
+            "tableSchema": "public",
+            "tableName": "parent",
+            "joinTargetTable": "child",
             "joinOn": "parent.id = child.parent_id",
-            "name": "parent",
-            "schema": "public",
         },
     },
-    "targetQuery": """
+    "destinationQuery": """
         INSERT INTO child_full (id, parent_name)
         SELECT c.id, p.name
         FROM ${key} AS d

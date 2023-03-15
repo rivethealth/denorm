@@ -27,34 +27,34 @@ _SCHEMA_JSON = {
     "id": "test",
     "tables": {
         "child": {
-            "name": "child",
-            "schema": "public",
-            "targetKey": ["child.id"],
+            "tableName": "child",
+            "tableSchema": "public",
+            "destinationKeyExpr": ["child.id"],
         },
         "parent": {
-            "columns": [
+            "tableName": "parent",
+            "tableSchema": "public",
+            "tableColumns": [
                 {"name": "id"},
                 {"name": "name"},
                 # purposefully exclude other and make sure its updates don't
                 # modify the table
             ],
-            "join": "child",
+            "joinTargetTable": "child",
             "joinOn": "parent.id = child.parent_id",
-            "name": "parent",
-            "schema": "public",
         },
     },
-    "targetQuery": """
+    "destinationQuery": """
         SELECT c.id, p.name, p.other
         FROM ${key} AS d
             JOIN child c ON d.id = c.id
             JOIN parent p ON c.parent_id = p.id
     """,
-    "targetTable": {
-        "columns": ["id", "parent_name", "parent_other"],
-        "key": ["id"],
-        "name": "child_full",
-        "schema": "public",
+    "destinationTable": {
+        "tableName": "child_full",
+        "tableSchema": "public",
+        "tableKey": ["id"],
+        "tableColumns": ["id", "parent_name", "parent_other"],
     },
 }
 

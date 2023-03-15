@@ -34,30 +34,30 @@ _SCHEMA_JSON = {
     "id": "test",
     "tables": {
         "child": {
-            "name": "child",
-            "targetKey": ["child.id"],
+            "tableName": "child",
+            "destinationKeyExpr": ["child.id"],
         },
         "grandparent": {
-            "join": "parent",
+            "tableName": "grandparent",
+            "joinTargetTable": "parent",
             "joinOn": "grandparent.id = parent.grandparent_id",
-            "name": "grandparent",
         },
         "parent": {
-            "key": [{"name": "id"}],
-            "join": "child",
-            "joinKey": ["id"],
+            "tableName": "parent",
+            "tableKey": [{"name": "id"}],
+            "joinTargetTable": "child",
+            "joinTargetKey": ["id"],
             "joinMode": "async",
             "joinOn": "parent.id = child.parent_id",
-            "name": "parent",
         },
     },
-    "targetTable": {
-        "key": ["id"],
-        "columns": ["id", "grandparent_name", "parent_name"],
-        "name": "child_full",
-        "schema": "public",
+    "destinationTable": {
+        "tableKey": ["id"],
+        "tableColumns": ["id", "grandparent_name", "parent_name"],
+        "tableName": "child_full",
+        "tableSchema": "public",
     },
-    "targetQuery": """
+    "destinationQuery": """
         SELECT c.id, g.name, p.name
         FROM ${key} AS d
             JOIN child c ON d.id = c.id
