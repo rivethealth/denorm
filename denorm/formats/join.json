@@ -92,7 +92,7 @@
             "$ref": "#/definitions/column"
           },
           "default": null,
-          "description": "Columns to select from table.",
+          "description": "Columns to watch for changes. If null then all columns will be watched.",
           "title": "Columns",
           "type": ["null", "array"]
         },
