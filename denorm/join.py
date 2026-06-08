@@ -125,6 +125,7 @@ def _statements(config: JoinConfig):
             structure=structure,
             table_id=table.join,
             tables=config.tables,
+            source_table_id=table_id,
         )
 
         yield from create_queue(

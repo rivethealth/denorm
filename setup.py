@@ -26,7 +26,7 @@ setuptools.setup(
             "denorm=denorm.cli.main:main",
         ]
     },
-    extras_require={"dev": ["black", "jsonschema2md", "pytest-env", "isort", "pytest"]},
+    extras_require={"dev": ["black", "jsonschema2md", "pytest-env", "isort", "pytest", "psycopg2-binary"]},
     package_data={
         "denorm.formats": ["*.json"],
     },
