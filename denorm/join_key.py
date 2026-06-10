@@ -111,13 +111,18 @@ class KeyResolver:
         self._structure = structure
         self._tables = tables
         self._table_id = table_id
-        self._source_table_id = source_table_id if source_table_id is not None else table_id
+        self._source_table_id = (
+            source_table_id if source_table_id is not None else table_id
+        )
 
         dep_ids = closure(
             [table_id],
-            lambda id: [tables[id].join_target_table]
-            if tables[id].join_mode == JoinJoinMode.SYNC and tables[id].join_target_table
-            else [],
+            lambda id: (
+                [tables[id].join_target_table]
+                if tables[id].join_mode == JoinJoinMode.SYNC
+                and tables[id].join_target_table
+                else []
+            ),
         )
         self._deps = [(id, tables[id]) for id in dep_ids]
 
@@ -164,4 +169,6 @@ class KeyResolver:
                 last_expr=last_expr,
             )
 
-        return self._action.sql(key_query, self._source_table_id, exprs=exprs, last_expr=last_expr)
+        return self._action.sql(
+            key_query, self._source_table_id, exprs=exprs, last_expr=last_expr
+        )

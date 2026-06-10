@@ -73,15 +73,13 @@ def test_join_refresh_function_all(pg_database):
             json.dump(_SCHEMA_JSON, f)
 
         with connection("") as conn, transaction(conn) as cur:
-            cur.execute(
-                """
+            cur.execute("""
                     INSERT INTO table_parent (parent_id, name)
                     VALUES (1, 'A'), (2, 'B');
 
                     INSERT INTO table_child (child_id, child_parent_id)
                     VALUES (1, 1), (2, 1), (3, 2);
-                """
-            )
+                """)
 
         output = run_process(
             [
@@ -121,15 +119,13 @@ def test_join_refresh_function_parent(pg_database):
             json.dump(_SCHEMA_JSON, f)
 
         with connection("") as conn, transaction(conn) as cur:
-            cur.execute(
-                """
+            cur.execute("""
                     INSERT INTO table_parent (parent_id, name)
                     VALUES (1, 'A'), (2, 'B');
 
                     INSERT INTO table_child (child_id, child_parent_id)
                     VALUES (1, 1), (2, 1), (3, 2);
-                """
-            )
+                """)
 
         output = run_process(
             [
@@ -169,15 +165,13 @@ def test_join_refresh_function_child(pg_database):
             json.dump(_SCHEMA_JSON, f)
 
         with connection("") as conn, transaction(conn) as cur:
-            cur.execute(
-                """
+            cur.execute("""
                     INSERT INTO table_parent (parent_id, name)
                     VALUES (1, 'A'), (2, 'B');
 
                     INSERT INTO table_child (child_id, child_parent_id)
                     VALUES (1, 1), (2, 1), (3, 2);
-                """
-            )
+                """)
 
         output = run_process(
             [

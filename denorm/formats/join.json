@@ -15,15 +15,10 @@
           "default": null,
           "description": "SQL expression. If null, the column value is used.",
           "title": "Value",
-          "type": [
-            "null",
-            "string"
-          ]
+          "type": ["null", "string"]
         }
       },
-      "required": [
-        "name"
-      ],
+      "required": ["name"],
       "title": "Column"
     },
     "keyColumn": {
@@ -38,55 +33,37 @@
           "default": null,
           "description": "Type of column.",
           "title": "Type",
-          "type": [
-            "null",
-            "string"
-          ]
+          "type": ["null", "string"]
         },
         "value": {
           "default": null,
           "description": "SQL expression. If null, the column value is used.",
           "title": "Value",
-          "type": [
-            "null",
-            "string"
-          ]
+          "type": ["null", "string"]
         }
       },
-      "required": [
-        "name"
-      ],
+      "required": ["name"],
       "title": "Column"
     },
     "table": {
       "additionalProperties": false,
       "description": "Source table.",
       "dependencies": {
-        "joinOn": [
-          "joinTargetTable"
-        ]
+        "joinOn": ["joinTargetTable"]
       },
       "allOf": [
         {
           "oneOf": [
             {
-              "required": [
-                "destinationKeyExpr"
-              ],
+              "required": ["destinationKeyExpr"],
               "not": {
-                "required": [
-                  "joinTargetTable"
-                ]
+                "required": ["joinTargetTable"]
               }
             },
             {
-              "required": [
-                "joinTargetTable"
-              ],
+              "required": ["joinTargetTable"],
               "not": {
-                "required": [
-                  "destinationKeyExpr"
-                ]
+                "required": ["destinationKeyExpr"]
               }
             }
           ]
@@ -97,20 +74,14 @@
               "not": {
                 "properties": {
                   "joinMode": {
-                    "enum": [
-                      "async"
-                    ]
+                    "enum": ["async"]
                   }
                 },
-                "required": [
-                  "joinMode"
-                ]
+                "required": ["joinMode"]
               }
             },
             {
-              "required": [
-                "joinTargetKey"
-              ]
+              "required": ["joinTargetKey"]
             }
           ]
         }
@@ -122,10 +93,7 @@
           "maximum": 32677,
           "minimum": -32678,
           "title": "Lock ID",
-          "type": [
-            "integer",
-            "null"
-          ]
+          "type": ["integer", "null"]
         },
         "tableSchema": {
           "default": "None",
@@ -145,10 +113,7 @@
             "$ref": "#/definitions/keyColumn"
           },
           "title": "key",
-          "type": [
-            "array",
-            "null"
-          ]
+          "type": ["array", "null"]
         },
         "tableColumns": {
           "items": {
@@ -157,19 +122,13 @@
           "default": null,
           "description": "Columns in the table that will be watched for changes. If null then all columns will be watched.",
           "title": "Columns",
-          "type": [
-            "null",
-            "array"
-          ]
+          "type": ["null", "array"]
         },
         "joinTargetTable": {
           "default": null,
           "description": "IDs of dependency table.",
           "title": "Join dependency",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "joinTargetKey": {
           "default": null,
@@ -178,41 +137,26 @@
             "type": "string"
           },
           "title": "Join key",
-          "type": [
-            "array",
-            "null"
-          ]
+          "type": ["array", "null"]
         },
         "joinOn": {
           "default": null,
           "description": "SQL expression to join to dependency.",
           "title": "Dependency join",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "joinMode": {
           "default": "sync",
           "description": "Mode of dependency join. Large many to one should use 'async'",
-          "enum": [
-            "async",
-            "sync"
-          ],
+          "enum": ["async", "sync"],
           "title": "Join consistency",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "joinOther": {
           "default": null,
           "description": "Expressions to add to join.",
           "title": "Join other",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "refreshFunction": {
           "default": false,
@@ -227,10 +171,7 @@
             "type": "string"
           },
           "title": "key",
-          "type": [
-            "array",
-            "null"
-          ]
+          "type": ["array", "null"]
         }
       },
       "type": "object",
@@ -257,10 +198,7 @@
             "type": "string"
           },
           "title": "Key",
-          "type": [
-            "array",
-            "null"
-          ]
+          "type": ["array", "null"]
         },
         "tableColumns": {
           "default": null,
@@ -269,15 +207,10 @@
             "type": "string"
           },
           "title": "Columns",
-          "type": [
-            "array",
-            "null"
-          ]
+          "type": ["array", "null"]
         }
       },
-      "required": [
-        "tableName"
-      ],
+      "required": ["tableName"],
       "title": "Destination table"
     }
   },
@@ -285,10 +218,7 @@
     "consistency": {
       "default": "immedidate",
       "description": "Consistency level. Immediate applies at the end of the command. Deferred applies at the end of a transaction.",
-      "enum": [
-        "deferred",
-        "immediate"
-      ],
+      "enum": ["deferred", "immediate"],
       "title": "Consistency",
       "type": "string"
     },
@@ -319,10 +249,7 @@
         "$ref": "#/definitions/keyColumn"
       },
       "title": "Key",
-      "type": [
-        "array",
-        "null"
-      ]
+      "type": ["array", "null"]
     },
     "setup": {
       "$ref": "#/definitions/hook",
@@ -348,19 +275,13 @@
       "default": "TABLE ${key}",
       "description": "Query to populate the destination table columns. If no table is specified, destination query could still be a function call or something else.",
       "title": "Query",
-      "type": [
-        "string",
-        "null"
-      ]
+      "type": ["string", "null"]
     },
     "destinationTable": {
       "$ref": "#/definitions/destinationTable"
     }
   },
-  "required": [
-    "id",
-    "tables"
-  ],
+  "required": ["id", "tables"],
   "title": "Join config",
   "type": "object"
 }

@@ -27,11 +27,13 @@ def create_queue(
     else:
         digest = hashlib.md5(f"{id}__{table_id}".encode("utf-8")).digest()
         lock_id = int.from_bytes(digest[0:2], "big", signed=True)
-    lock_base = lock_id * (2 ** 48)
+    lock_base = lock_id * (2**48)
 
     queue_table = structure.queue_table(table_id)
 
-    column_names = [column.name for column in table.table_key] if table.table_key else ["_"]
+    column_names = (
+        [column.name for column in table.table_key] if table.table_key else ["_"]
+    )
 
     local_columns = [local_column(column) for column in column_names]
     foreign_columns = [foreign_column(column) for column in table.join_target_key]
@@ -239,14 +241,14 @@ def enqueue_sql(
 ):
     queue_table = structure.queue_table(id)
 
-    column_names = [column.name for column in table.table_key] if table.table_key else ["_"]
+    column_names = (
+        [column.name for column in table.table_key] if table.table_key else ["_"]
+    )
     local_columns = [local_column(column) for column in column_names]
     context_columns = [context_column(setting) for setting in context]
 
     if table.table_key:
-        order = (
-            f"ORDER BY {sql_list(SqlNumber(i + 1) for i, _ in enumerate(table.table_key))}"
-        )
+        order = f"ORDER BY {sql_list(SqlNumber(i + 1) for i, _ in enumerate(table.table_key))}"
     else:
         order = ""
 

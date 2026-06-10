@@ -79,15 +79,13 @@ def test_join_key(pg_database):
             cur.execute(output.decode("utf-8"))
 
         with connection("") as conn, transaction(conn) as cur:
-            cur.execute(
-                """
+            cur.execute("""
                     INSERT INTO parent (id, name, other)
                     VALUES (1, 'A', ''), (2, 'B', '');
 
                     INSERT INTO child (id, parent_id)
                     VALUES (1, 1), (2, 1), (3, 2);
-                """
-            )
+                """)
 
         with connection("") as conn, transaction(conn) as cur:
             cur.execute("SELECT * FROM child_full ORDER BY id")
@@ -95,12 +93,10 @@ def test_join_key(pg_database):
             assert result == [(1, "A", ""), (2, "A", ""), (3, "B", "")]
 
         with connection("") as conn, transaction(conn) as cur:
-            cur.execute(
-                """
+            cur.execute("""
                     UPDATE parent
                     SET other = 'other';
-                """
-            )
+                """)
 
         with connection("") as conn, transaction(conn) as cur:
             cur.execute("SELECT * FROM child_full ORDER BY id")

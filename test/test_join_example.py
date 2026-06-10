@@ -41,7 +41,11 @@ _SCHEMA_JSON = {
             "joinTargetTable": "book_author",
             "joinOn": "author.id = book_author.author_id",
         },
-        "book": {"tableName": "book", "tableSchema": "public", "destinationKeyExpr": ["book.id"]},
+        "book": {
+            "tableName": "book",
+            "tableSchema": "public",
+            "destinationKeyExpr": ["book.id"],
+        },
         "book_author": {
             "tableName": "book_author",
             "tableSchema": "public",
@@ -93,8 +97,7 @@ def test_join_example(pg_database):
             cur.execute(output.decode("utf-8"))
 
         with connection("") as conn, transaction(conn) as cur:
-            cur.execute(
-                """
+            cur.execute("""
                     INSERT INTO author (id, name)
                     VALUES
                         (1, 'Neil Gaiman'),
@@ -110,8 +113,7 @@ def test_join_example(pg_database):
                         (1, 1, 1, 1),
                         (2, 1, 2, 2),
                         (3, 2, 2, 1);
-                """
-            )
+                """)
 
         with connection("") as conn, transaction(conn) as cur:
             cur.execute("SELECT * FROM book_full ORDER BY id")

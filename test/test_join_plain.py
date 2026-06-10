@@ -70,15 +70,13 @@ def test_join_plain(pg_database):
             cur.execute(output.decode("utf-8"))
 
         with connection("") as conn, transaction(conn) as cur:
-            cur.execute(
-                """
+            cur.execute("""
                     INSERT INTO parent (id, name)
                     VALUES (1, 'A'), (2, 'B');
 
                     INSERT INTO child (id, parent_id)
                     VALUES (1, 1), (2, 1), (3, 2);
-                """
-            )
+                """)
 
         with connection("") as conn, transaction(conn) as cur:
             cur.execute("SELECT * FROM child_full ORDER BY id")

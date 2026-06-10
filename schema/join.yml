@@ -101,7 +101,8 @@ definitions:
         type: [string, "null"]
       joinMode:
         default: sync
-        description: Mode of dependency join. Large many to one should use 'async'
+        description:
+          Mode of dependency join. Large many to one should use 'async'
         enum: [async, sync]
         title: Join consistency
         type: [string, "null"]
@@ -117,7 +118,9 @@ definitions:
         type: boolean
       destinationKeyExpr:
         default: null
-        description: SQL expressions for this table's columns that make up the destination table's key columns ([this table name].[column name]).
+        description:
+          SQL expressions for this table's columns that make up the destination
+          table's key columns ([this table name].[column name]).
         items: { type: string }
         title: key
         type: [array, "null"]
@@ -144,7 +147,8 @@ definitions:
         type: [array, "null"]
       tableColumns:
         default: null
-        description: Columns. Must match columns from destinationQuery select (?)
+        description:
+          Columns. Must match columns from destinationQuery select (?)
         items: { type: string }
         title: Columns
         type: [array, "null"]
@@ -198,7 +202,9 @@ properties:
     type: object
   destinationQuery:
     default: TABLE ${key}
-    description: Query to populate the destination table columns. If no table is specified, destination query could still be a function call or something else.
+    description:
+      Query to populate the destination table columns. If no table is specified,
+      destination query could still be a function call or something else.
     title: Query
     type: [string, "null"]
   destinationTable: { $ref: "#/definitions/destinationTable" }
