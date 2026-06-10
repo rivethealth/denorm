@@ -112,8 +112,7 @@ def test_join(pg_database):
             cur.execute(output.decode("utf-8"))
 
         with connection("") as conn, transaction(conn) as cur:
-            cur.execute(
-                """
+            cur.execute("""
                     INSERT INTO parent (id, name)
                     VALUES (1, 'A'), (2, 'B');
 
@@ -125,8 +124,7 @@ def test_join(pg_database):
 
                     INSERT INTO grandchild (id, child_id, other_id)
                     VALUES (1, 2, 1);
-                """
-            )
+                """)
 
         with connection("") as conn, transaction(conn) as cur:
             cur.execute("SELECT * FROM child_full ORDER BY id")
@@ -134,12 +132,10 @@ def test_join(pg_database):
             assert result == [(1, "A", []), (2, "A", ["Other"]), (3, "B", [])]
 
         with connection("") as conn, transaction(conn) as cur:
-            cur.execute(
-                """
+            cur.execute("""
                     INSERT INTO other_override (id, parent_id, other_id, name)
                     VALUES (1, 1, 1, 'Override');
-                """
-            )
+                """)
 
         with connection("") as conn, transaction(conn) as cur:
             cur.execute("SELECT * FROM child_full ORDER BY id")

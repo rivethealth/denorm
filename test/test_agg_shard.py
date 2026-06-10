@@ -54,12 +54,10 @@ def test_agg(pg_database):
             cur.execute(output.decode("utf-8"))
 
         with transaction(conn) as cur:
-            cur.execute(
-                """
+            cur.execute("""
                     INSERT INTO child (id, parent_id)
                     VALUES (1, 1), (2, 1), (3, 2);
-                """
-            )
+                """)
 
         with transaction(conn) as cur:
             cur.execute("SELECT * FROM parent_child_stat ORDER BY parent_id")

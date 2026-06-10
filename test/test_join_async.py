@@ -88,8 +88,7 @@ def test_join_async(pg_database):
             cur.execute(output.decode("utf-8"))
 
         with connection("") as conn, transaction(conn) as cur:
-            cur.execute(
-                """
+            cur.execute("""
                     INSERT INTO grandparent (id, name)
                     VALUES (9, '_');
 
@@ -98,8 +97,7 @@ def test_join_async(pg_database):
 
                     INSERT INTO child (id, parent_id)
                     VALUES (1, 1), (2, 1), (3, 2);
-                """
-            )
+                """)
 
         with connection("") as conn:
             conn.autocommit = True

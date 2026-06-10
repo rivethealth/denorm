@@ -34,7 +34,7 @@ See [Join config](join-schema.md) for documentation generated from JSONSchema.
 
 `consistency`
 
-There are two modes. The default is immedidate.
+There are two modes. The default is immediate.
 
 ##### Immediate
 
@@ -74,15 +74,15 @@ should be unique within a schema.
 
 #### Key
 
-The destination primary key is specified by `key`, which is an array of the column
-names and types.
+The destination primary key is specified by `key`, which is an array of the
+column names and types.
 
 ```json
 [{ "name": "id", "type": "bigint" }]
 ```
 
-If `destinationTable.tableKey` is specified, `key` can be ommitted, and inferred from
-that.
+If `destinationTable.tableKey` is specified, `key` can be ommitted, and inferred
+from that.
 
 #### Lock
 
@@ -205,10 +205,10 @@ If tables have an 1:N relationship with a very large N — say, tens of thousand
 — it may not be feasible to process all records a single transaction. Denorm
 allows the join to happen over multiple transactions.
 
-Use `tableColumns` for the relevant data on the table, and `joinTargetKey` to indicate a
-unique key on the foreign table. Also specify `tableKey` to indicate the unique key on
-this table. These are used to track the iteration state.
-(See comments in Performance section).
+Use `tableColumns` for the relevant data on the table, and `joinTargetKey` to
+indicate a unique key on the foreign table. Also specify `tableKey` to indicate
+the unique key on this table. These are used to track the iteration state. (See
+comments in Performance section).
 
 Building on the book example, suppose each book had a genre, and the genre's
 name is to be included in the target table. A genre may have hundreds of
@@ -285,8 +285,8 @@ qualification.
 
 ## Asynchronous joins
 
-For asynchronous joins, updates will not automatically affect the destination table.
-Instead, the state of the join is tracked in a table (e.g.
+For asynchronous joins, updates will not automatically affect the destination
+table. Instead, the state of the join is tracked in a table (e.g.
 `book_full__que__genre`) and must be processed by a worker.
 
 ```sql
@@ -302,8 +302,9 @@ join requires processing.
 
 ### Errors
 
-Errors in updating the destination no longer fail the original transaction. Ensure
-that the query does not have errors, else they will halt asynchronous updates.
+Errors in updating the destination no longer fail the original transaction.
+Ensure that the query does not have errors, else they will halt asynchronous
+updates.
 
 ### Performance
 
@@ -325,8 +326,8 @@ without unnecessary scans.
 
 Denorm can be leveraged to create an asynchronous fill of the entire table.
 
-Add a tables entry (suggested name: all) with `joinTargetTable`, `joinMode: async`, and
-`joinTargetKey`.
+Add a tables entry (suggested name: all) with `joinTargetTable`,
+`joinMode: async`, and `joinTargetKey`.
 
 <details>
 <summary>book_full.yml</summary>

@@ -58,8 +58,8 @@ doc/usage.md: script/usage-doc.sh
 ###
 # Format
 ###
-FORMAT_SRC := $(shell find . $(TARGET:%=-not \$(LPAREN) -name % -prune \$(RPAREN)) -name '*.py')
-PRETTIER_SRC := $(shell find . $(TARGET:%=-not \$(LPAREN) -name % -prune \$(RPAREN)) \$(LPAREN) -name '*.json' -o -name '*.md' -o -name '*.yml' \$(RPAREN))
+FORMAT_SRC := $(shell find . $(TARGET:%=-not \$(LPAREN) -name % -prune \$(RPAREN)) -not \$(LPAREN) -name .venv -prune \$(RPAREN) -name '*.py')
+PRETTIER_SRC := $(shell find . $(TARGET:%=-not \$(LPAREN) -name % -prune \$(RPAREN)) -not \$(LPAREN) -name .venv -prune \$(RPAREN) \$(LPAREN) -name '*.json' -o -name '*.md' -o -name '*.yml' \$(RPAREN))
 
 .PHONY: format
 format: target/format.target
@@ -124,10 +124,10 @@ test: $(SCHEMA_TGT)
 	pytest
 
 ###
-# Yarn
+# NPM
 ###
 
 target/node_modules.target: package.json yarn.lock
 	mkdir -p $(@D)
-	yarn install
+	npm install
 	> $@

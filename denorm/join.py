@@ -28,7 +28,6 @@ Temp tables:
       * join (deferred) - Perform refresh
 """
 
-
 import dataclasses
 import typing
 
