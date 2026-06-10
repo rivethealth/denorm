@@ -7,7 +7,7 @@ _Configuration for joining tables._
 - <a id="properties/consistency"></a>**`consistency`** _(string)_: Consistency
   level. Immediate applies at the end of the command. Deferred applies at the
   end of a transaction. Must be one of: "deferred" or "immediate". Default:
-  `"immedidate"`.
+  `"immediate"`.
 - <a id="properties/context"></a>**`context`** _(array)_: PostgreSQL settings to
   propogate through async joins. Default: `[]`.
   - <a id="properties/context/items"></a>**Items** _(string)_

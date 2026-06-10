@@ -216,7 +216,7 @@
   },
   "properties": {
     "consistency": {
-      "default": "immedidate",
+      "default": "immediate",
       "description": "Consistency level. Immediate applies at the end of the command. Deferred applies at the end of a transaction.",
       "enum": ["deferred", "immediate"],
       "title": "Consistency",

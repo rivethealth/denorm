@@ -34,7 +34,7 @@ See [Join config](join-schema.md) for documentation generated from JSONSchema.
 
 `consistency`
 
-There are two modes. The default is immedidate.
+There are two modes. The default is immediate.
 
 ##### Immediate
 
