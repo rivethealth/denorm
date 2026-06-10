@@ -14,7 +14,7 @@
 ## Overview
 
 Join gathers keys from multiple tables, and then uses those keys to perform a
-target action.
+destination action.
 
 ```sh
 < schema.json denorm create-join > output.sql
@@ -42,7 +42,7 @@ There are two modes. The default is immedidate.
 "immediate"
 ```
 
-The target is updated at the end of the statement.
+The destination is updated at the end of the statement.
 
 ##### Deferred
 
@@ -50,13 +50,13 @@ The target is updated at the end of the statement.
 "deferred"
 ```
 
-The target is updated at the end of the transaction.
+The destination is updated at the end of the transaction.
 
 Deferring work involves overhead. It can be useful in a couple cases
 
 - Deduplicating work. For example, if multiple "levels" of records (e.g. a
   record and children and grandchildren) are affected in the same transaction.
-- Reducing lock duraton on target records.
+- Reducing lock duraton on destination records.
 
 #### Context
 
@@ -74,14 +74,14 @@ should be unique within a schema.
 
 #### Key
 
-The target primary key is specified by `key`, which is an array of the column
+The destination primary key is specified by `key`, which is an array of the column
 names and types.
 
 ```json
 [{ "name": "id", "type": "bigint" }]
 ```
 
-If `targetTarget.key` is specified, `key` can be ommitted, and inferred from
+If `destinationTable.tableKey` is specified, `key` can be ommitted, and inferred from
 that.
 
 #### Lock
@@ -108,9 +108,9 @@ objects are created and referenced without schema qualifiers.
 
 A map of IDs to source table definitions.
 
-#### Target query
+#### Destination query
 
-`targetQuery`
+`destinationQuery`
 
 This query the gathered keys. Placeholders take the form of `${key}`. Literal
 `$` characters are escaped as `$$`.
@@ -124,31 +124,31 @@ Placeholders:
 "SELECT * FROM ${key}"
 ```
 
-#### Target table
+#### Destination table
 
-`targetTable`
+`destinationTable`
 
-See [Target table](#target-table-1).
+See [Destination table](#destination-table-1).
 
-### Target table
+### Destination table
 
-The target table that will receive changes.
+The destination table that will receive changes.
 
 #### Columns
 
-`columns`
+`tableColumns`
 
-The column names, in the same order as returned by the target query.
+The column names, in the same order as returned by the destination query.
 
 #### Key
 
-`key`
+`tableKey`
 
 The column names of the unique key of the table. Used for asynchronous joins.
 
 #### Schema
 
-`schema`
+`tableSchema`
 
 The schema name of the table. If not specified, the table is referenced without
 qualification.
@@ -175,9 +175,9 @@ space is generated from the ID and table ID.
 
 The base lock ID is in the comment on the `lock` column.
 
-#### Join
+#### Join table
 
-`join`
+`joinTargetTable`
 
 The ID of the table to join to.
 
@@ -205,8 +205,9 @@ If tables have an 1:N relationship with a very large N — say, tens of thousand
 — it may not be feasible to process all records a single transaction. Denorm
 allows the join to happen over multiple transactions.
 
-Use `columns` for the relevant data on the table, and `joinKey` to indicate a
-unique key on the foreign table. These are used to track the iteration state.
+Use `tableColumns` for the relevant data on the table, and `joinTargetKey` to indicate a
+unique key on the foreign table. Also specify `tableKey` to indicate the unique key on
+this table. These are used to track the iteration state.
 (See comments in Performance section).
 
 Building on the book example, suppose each book had a genre, and the genre's
@@ -220,28 +221,28 @@ related `book` records by `id`.
 ```yml
 tables:
   author:
-    join: author.id = book_author.author_id
-    joinDep: book_author
-    name: book_author
-    schema: public
+    tableName: author
+    tableSchema: public
+    joinOn: author.id = book_author.author_id
+    joinTargetTable: book_author
   book:
-    columns:
+    tableName: book
+    tableColumns:
       - name: id
-    name: book
-    schema: public
-    targetKey: [book.id]
+    tableSchema: public
+    destinationKeyExpr: [book.id]
   book_author:
-    name: book_author
-    schema: public
-    targetKey: [book_author.book_id]
+    tableName: book_author
+    tableSchema: public
+    destinationKeyExpr: [book_author.book_id]
   genre:
-    join: book
-    joinMode: async
+    tableName: genre
+    tableSchema: public
+    tableKey: [id]
+    joinTargetTable: book
+    joinTargetKey: [id]
     joinOn: book.genre_id = genre.id
-    joinKey: [id]
-    key: [id]
-    name: genre
-    schema: public
+    joinMode: async
 ```
 
 </details>
@@ -264,32 +265,32 @@ tracked and monitored for changes elsewhere.
 
 #### Table
 
-`table`
+`tableName`
 
-The table name. If not specified, the table is a "pseudo table." This is usefull
+The table name. If not specified, the table is a "pseudo table." This is useful
 for asynchronous backfills.
 
-#### Target key
+#### Destination key
 
-`targetKey`
+`destinationKeyExpr`
 
-SQL expressions for the target key.
+SQL expressions for the destination table key.
 
 #### Schema
 
-`schema`
+`tableSchema`
 
 The schema name. If unspecified, the table is referenced without schema
 qualification.
 
 ## Asynchronous joins
 
-For asynchronous joins, updates will not automatically affect the target table.
+For asynchronous joins, updates will not automatically affect the destination table.
 Instead, the state of the join is tracked in a table (e.g.
 `book_full__que__genre`) and must be processed by a worker.
 
 ```sql
--- Find an incomplete author change and refresh the target for up to 1000 corresponding
+-- Find an incomplete author change and refresh the destination for up to 1000 corresponding
 -- book_author records.
 -- Return whether additional processing remains to be done.
 SELECT book_full__pcs__genre(1000);
@@ -301,7 +302,7 @@ join requires processing.
 
 ### Errors
 
-Errors in updating the target no longer fail the original transaction. Ensure
+Errors in updating the destination no longer fail the original transaction. Ensure
 that the query does not have errors, else they will halt asynchronous updates.
 
 ### Performance
@@ -324,8 +325,8 @@ without unnecessary scans.
 
 Denorm can be leveraged to create an asynchronous fill of the entire table.
 
-Add a tables entry (suggested name: all) with `join`, `joinMode: async`, and
-`joinKey`.
+Add a tables entry (suggested name: all) with `joinTargetTable`, `joinMode: async`, and
+`joinTargetKey`.
 
 <details>
 <summary>book_full.yml</summary>
@@ -333,9 +334,9 @@ Add a tables entry (suggested name: all) with `join`, `joinMode: async`, and
 ```yml
 tables:
   all:
-    join: book
+    joinTargetTable: book
     joinMode: async
-    joinKey: [id]
+    joinTargetKey: [id]
   author:
     join: book_author
     joinOn: author.id = book_author.author_id

@@ -6,18 +6,18 @@ from pg import connection, transaction
 from process import run_process
 
 _SCHEMA_SQL = """
-    CREATE TABLE parent (
-        id int PRIMARY KEY,
+    CREATE TABLE table_parent (
+        parent_id int PRIMARY KEY,
         name text NOT NULL
     );
 
-    CREATE TABLE child (
-        id int PRIMARY KEY,
-        parent_id int REFERENCES parent (id)
+    CREATE TABLE table_child (
+        child_id int PRIMARY KEY,
+        child_parent_id int REFERENCES table_parent (parent_id)
     );
 
-    CREATE TABLE child_full (
-        id int PRIMARY KEY,
+    CREATE TABLE table_child_full (
+        child_full_child_id int PRIMARY KEY,
         parent_name text NOT NULL
     );
 """
@@ -26,40 +26,40 @@ _SCHEMA_JSON = {
     "id": "test",
     "tables": {
         "all": {
-            "join": "child",
-            "joinKey": ["id"],
+            "joinTargetTable": "table_child",
+            "joinTargetKey": ["child_id"],
             "joinMode": "async",
             "refreshFunction": True,
         },
-        "child": {
-            "name": "child",
-            "key": [{"name": "id", "type": "int"}],
+        "table_child": {
+            "tableSchema": "public",
+            "tableName": "table_child",
+            "tableKey": [{"name": "child_id", "type": "int"}],
             "refreshFunction": True,
-            "schema": "public",
-            "targetKey": ["child.id"],
+            "destinationKeyExpr": ["table_child.child_id"],
         },
-        "parent": {
-            "join": "child",
-            "joinKey": ["id"],
+        "table_parent": {
+            "tableSchema": "public",
+            "tableName": "table_parent",
+            "tableKey": [{"name": "parent_id", "type": "int"}],
+            "joinTargetTable": "table_child",
+            "joinTargetKey": ["child_id"],
             "joinMode": "async",
-            "joinOn": "parent.id = child.parent_id",
-            "key": [{"name": "id", "type": "int"}],
-            "name": "parent",
+            "joinOn": "table_parent.parent_id = table_child.child_parent_id",
             "refreshFunction": True,
-            "schema": "public",
         },
     },
-    "targetTable": {
-        "key": ["id"],
-        "columns": ["id", "parent_name"],
-        "name": "child_full",
-        "schema": "public",
+    "destinationTable": {
+        "tableSchema": "public",
+        "tableName": "table_child_full",
+        "tableKey": ["child_full_child_id"],
+        "tableColumns": ["child_full_child_id", "parent_name"],
     },
-    "targetQuery": """
-        SELECT c.id, p.name
+    "destinationQuery": """
+        SELECT c.child_id, p.name
         FROM ${key} AS d
-            JOIN child c ON d.id = c.id
-            JOIN parent p ON c.parent_id = p.id
+            JOIN table_child c ON d.child_full_child_id = c.child_id
+            JOIN table_parent p ON c.child_parent_id = p.parent_id
     """,
 }
 
@@ -75,10 +75,10 @@ def test_join_refresh_function_all(pg_database):
         with connection("") as conn, transaction(conn) as cur:
             cur.execute(
                 """
-                    INSERT INTO parent (id, name)
+                    INSERT INTO table_parent (parent_id, name)
                     VALUES (1, 'A'), (2, 'B');
 
-                    INSERT INTO child (id, parent_id)
+                    INSERT INTO table_child (child_id, child_parent_id)
                     VALUES (1, 1), (2, 1), (3, 2);
                 """
             )
@@ -107,7 +107,7 @@ def test_join_refresh_function_all(pg_database):
                         break
 
         with connection("") as conn, transaction(conn) as cur:
-            cur.execute("SELECT * FROM child_full ORDER BY id")
+            cur.execute("SELECT * FROM table_child_full ORDER BY child_full_child_id")
             result = cur.fetchall()
             assert result == [(1, "A"), (2, "A"), (3, "B")]
 
@@ -123,10 +123,10 @@ def test_join_refresh_function_parent(pg_database):
         with connection("") as conn, transaction(conn) as cur:
             cur.execute(
                 """
-                    INSERT INTO parent (id, name)
+                    INSERT INTO table_parent (parent_id, name)
                     VALUES (1, 'A'), (2, 'B');
 
-                    INSERT INTO child (id, parent_id)
+                    INSERT INTO table_child (child_id, child_parent_id)
                     VALUES (1, 1), (2, 1), (3, 2);
                 """
             )
@@ -143,19 +143,19 @@ def test_join_refresh_function_parent(pg_database):
             cur.execute(output.decode("utf-8"))
 
         with connection("") as conn, transaction(conn) as cur:
-            cur.execute("SELECT test__rfs__parent(1)")
+            cur.execute("SELECT test__rfs__table_parent(1)")
 
         with connection("") as conn:
             conn.autocommit = True
             with conn.cursor() as cur:
                 while True:
-                    cur.execute("SELECT test__pcs__parent(10)")
+                    cur.execute("SELECT test__pcs__table_parent(10)")
                     (result,) = cur.fetchone()
                     if not result:
                         break
 
         with connection("") as conn, transaction(conn) as cur:
-            cur.execute("SELECT * FROM child_full ORDER BY id")
+            cur.execute("SELECT * FROM table_child_full ORDER BY child_full_child_id")
             result = cur.fetchall()
             assert result == [(1, "A"), (2, "A")]
 
@@ -171,10 +171,10 @@ def test_join_refresh_function_child(pg_database):
         with connection("") as conn, transaction(conn) as cur:
             cur.execute(
                 """
-                    INSERT INTO parent (id, name)
+                    INSERT INTO table_parent (parent_id, name)
                     VALUES (1, 'A'), (2, 'B');
 
-                    INSERT INTO child (id, parent_id)
+                    INSERT INTO table_child (child_id, child_parent_id)
                     VALUES (1, 1), (2, 1), (3, 2);
                 """
             )
@@ -191,10 +191,10 @@ def test_join_refresh_function_child(pg_database):
             cur.execute(output.decode("utf-8"))
 
         with connection("") as conn, transaction(conn) as cur:
-            cur.execute("SELECT test__rfs__child(1) FROM child")
-            cur.execute("SELECT test__rfs__child(2) FROM child")
+            cur.execute("SELECT test__rfs__table_child(1) FROM table_child")
+            cur.execute("SELECT test__rfs__table_child(2) FROM table_child")
 
         with connection("") as conn, transaction(conn) as cur:
-            cur.execute("SELECT * FROM child_full ORDER BY id")
+            cur.execute("SELECT * FROM table_child_full ORDER BY child_full_child_id")
             result = cur.fetchall()
             assert result == [(1, "A"), (2, "A")]

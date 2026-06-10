@@ -70,17 +70,18 @@ def _create_change_function(
     table: JoinTable,
 ):
     def query(name: SqlObject):
-        if table.columns is None:
+        if table.table_columns is None:
             return f"TABLE {name}"
         values = sql_list(
             column.sql if column.value is None else f"{column.value} AS {column.sql}"
-            for column in table.columns
+            for column in table.table_columns
         )
         return f"SELECT {values} FROM {name}"
 
     if change_type == _ChangeType.CHANGE_1:
         change = SqlObject("_change")
         root = f"({query(change)})"
+        comment_str = "inserts and deletes"
     elif change_type == _ChangeType.CHANGE_2:
         old = SqlObject("_old")
         new = SqlObject("_new")
@@ -91,6 +92,7 @@ def _create_change_function(
     ({query(new)} EXCEPT ALL {query(old)})
 )
     """.strip()
+        comment_str = "updates"
 
     yield f"""
 CREATE FUNCTION {function} () RETURNS trigger
@@ -104,5 +106,5 @@ $$
     """.strip()
 
     yield f"""
-COMMENT ON FUNCTION {function} IS {SqlString(f'Handle changes to {table_id} for {id}')}
+COMMENT ON FUNCTION {function} IS {SqlString(f'Handle {comment_str} to table {table_id} for destination {id}')}
     """.strip()
