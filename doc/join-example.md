@@ -57,21 +57,20 @@ echo "
 id: book_full
 tables:
   author:
-    join: book_author
+    joinTargetTable: book_author
     joinOn: author.id = book_author.author_id
-    name: author
+    tableName: author
   book:
-    name: book
-    targetKey: [book.id]
+    tableName: book
+    destinationKeyExpr: [book.id]
   book_author:
-    name: book_author
-    targetKey: [book_author.book_id]
-    name: book_author
-targetTable:
-  columns: [id, title, author_names]
-  key: [id]
-  name: book_full
-targetQuery: >
+    tableName: book_author
+    destinationKeyExpr: [book_author.book_id]
+destinationTable:
+  tableColumns: [id, title, author_names]
+  tableKey: [id]
+  tableName: book_full
+destinationQuery: >
   SELECT
     b.id,
     b.title,

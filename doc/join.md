@@ -339,16 +339,15 @@ tables:
     joinMode: async
     joinTargetKey: [id]
   author:
-    join: book_author
+    joinTargetTable: book_author
     joinOn: author.id = book_author.author_id
-    name: author
+    tableName: author
   book:
-    name: book
-    targetKey: [book.id]
+    tableName: book
+    destinationKeyExpr: [book.id]
   book_author:
-    name: book_author
-    targetKey: [book_author.book_id]
-    name: book_author
+    tableName: book_author
+    destinationKeyExpr: [book_author.book_id]
 ```
 
 </details>
