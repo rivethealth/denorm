@@ -34,6 +34,8 @@ setuptools.setup(
             "isort",
             "pytest",
             "psycopg2-binary",
+            "setuptools",
+            "twine",
         ]
     },
     package_data={
