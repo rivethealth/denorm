@@ -16,7 +16,7 @@ _Configuration for joining tables._
 - <a id="properties/lock"></a>**`lock`** _(boolean)_: Whether to lock before
   refreshing target. Default: `false`.
 - <a id="properties/key"></a>**`key`** _(array or null)_: Key. If null, uses
-  values from targetTable. Default: `null`.
+  values from destinationTable. Default: `null`.
 - <a id="properties/setup"></a>**`setup`**: Setup function. Refer to
   _[#/definitions/hook](#definitions/hook)_. Default: `null`.
 - <a id="properties/schema"></a>**`schema`** _(string)_: Schema for created
